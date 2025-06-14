@@ -56,15 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- THIS IS THE KEY FIX ---
         // Select the new span elements by their ID inside the cloned card
-        const priceThbEl = card.querySelector('#price-thb');
-        const priceUsdEl = card.querySelector('#price-usd');
-        const priceKhrEl = card.querySelector('#price-khr');
-
-        // Use the formatPrice helper for each currency and set the text content
-        // Note: The base price from your database is assumed to be in THB as per your config.
-        priceThbEl.textContent = formatPrice(product.selling_price, 'THB');
-        priceUsdEl.textContent = formatPrice(product.selling_price, 'USD');
-        priceKhrEl.textContent = formatPrice(product.selling_price, 'KHR');
+        const currentPriceEl = card.querySelector('.current-price');
+    // Format the price using the helper, hardcoded to 'THB'
+        currentPriceEl.textContent = formatPrice(product.selling_price, 'THB');
         
         card.querySelector('.card-image').src = product.image_url || 'https://via.placeholder.com/300x300.png?text=No+Image';
         card.querySelector('.product-name').textContent = product.name_en;
