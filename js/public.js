@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const stockStatusEl = card.querySelector('.stock-status');
         const originalPriceEl = card.querySelector('.original-price');
         const currentPriceEl = card.querySelector('.current-price');
+
+        currentPriceEl.textContent = formatPrice(product.selling_price, 'THB');
         
         // This will be for a future details page
         // link.href = `product.html?id=${product.id}`; 

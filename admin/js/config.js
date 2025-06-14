@@ -1,22 +1,29 @@
-// public/admin/js/config.js
+// In frontend/js/config.js
 
 const AppConfig = {
-  // Set the exchange rate. Example: 1 USD = 36.50 THB
-  // This should be updated periodically or fetched from an API in a real-world scenario.
-  USD_TO_THB_RATE: 36.50,
-  
-  // Define currency symbols
-  CURRENCY_USD: {
-    code: 'USD',
-    symbol: '$',
-    format: (value) => `$${parseFloat(value).toFixed(2)}`
-  },
-  CURRENCY_THB: {
-    code: 'THB',
-    symbol: '฿',
-    format: (value) => `฿${Math.round(parseFloat(value)).toLocaleString()}` // Baht is often shown as a whole number
-  },
-
-  // The default warehouse ID for transactions. Get this from your Supabase 'warehouses' table.
-  DEFAULT_WAREHOUSE_ID: 'c451f784-5f1d-4b86-823d-1e75660a6b6d', 
+    // 1. Change the BASE_CURRENCY to 'THB'
+    BASE_CURRENCY: 'THB',
+    
+    SUPPORTED_CURRENCIES: {
+        // 2. Define THB (Thai Baht) as the new base currency. Its rate is 1.0.
+        'THB': {
+            symbol: '฿', // Baht symbol
+            name: 'Thai Baht',
+            rate: 1.0 
+        },
+        // 3. Define USD relative to THB.
+        // If 1 USD = 36.75 THB, then 1 THB = 1/36.75 USD.
+        'USD': {
+            symbol: '$',
+            name: 'US Dollar',
+            rate: 1 / 36.75 // ~0.0272. Let the computer do the math.
+        },
+        // 4. Define KHR relative to THB.
+        // If 1 THB = 112 KHR (example), set the rate directly.
+        'KHR': {
+            symbol: '៛',
+            name: 'Cambodian Riel',
+            rate: 112.0 // Example rate: 1 THB = 112 KHR
+        }
+    }
 };
