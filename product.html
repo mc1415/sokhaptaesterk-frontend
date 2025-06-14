@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <link rel="stylesheet" href="css/public.css">
+    <link rel="icon" href="assets/images/logo.png" type="image/png">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="container">
+            <a href="index.html" class="logo-container">
+                <img src="assets/images/logo.png" alt="Sophea Phtes Nek Logo">
+            </a>
+            <nav class="main-nav">
+                <a href="index.html">Products</a>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" id="product-detail-container">
+        <!-- Product details will be inserted here by JS -->
+        <p class="loading-message">Loading product...</p>
+    </main>
+    
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© 2024 Sophea Phtes Nek. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <template id="product-detail-template">
+        <div class="product-detail-layout">
+            <div class="product-image-gallery">
+                <img src="" alt="Product Image" id="detail-image">
+            </div>
+            <div class="product-info">
+                <h1 id="detail-name-en">Product Name</h1>
+                <h2 id="detail-name-km" class="khmer-text">ឈ្មោះផលិតផល</h2>
+                <div class="info-meta">
+                    <span class="category-tag" id="detail-category">Category</span>
+                    <span class="stock-tag" id="detail-stock">Stock Status</span>
+                </div>
+                <div class="price-wrapper-detail">
+                    <span class="original-price" id="detail-original-price">$0.00</span>
+                    <span class="current-price" id="detail-price">$0.00</span>
+                </div>
+                <div class="description" id="detail-description">
+                    <p>Product description will go here.</p>
+                </div>
+                
+                <!-- New "Find In Store" block -->
+                <div class="store-cta">
+                    <h3>Find this item in our store!</h3>
+                    <p>Purchases can only be made in person. We look forward to seeing you!</p>
+                    <p class="address">📍 123 Street Name, Phnom Penh, Cambodia</p>
+                </div>
+
+                <a href="index.html" class="btn btn-secondary"> ← Back to All Products</a>
+            </div>
+        </div>
+    </template>
+
+    <script src="admin/js/mockData.js"></script>
+    <script src="js/product-detail.js"></script>
+</body>
+</html>

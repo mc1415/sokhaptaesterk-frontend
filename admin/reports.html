@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Logo"></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="inventory_management.html">Inventory</a>
+                <a href="pos.html">POS System</a>
+                <a href="staff_management.html">Staff Management</a>
+                <a href="sales_history.html">Sales History</a>
+                <a href="reports.html" class="active">Reports</a>
+            </nav>
+            <footer class="sidebar-footer">
+                <div class="user-info"><span>Logged in as:</span><span id="user-name"></span></div>
+                <button id="logout-btn">Logout</button>
+            </footer>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1>Reports</h1>
+            </header>
+
+            <div class="content-card">
+                <h2>Coming Soon!</h2>
+                <p>This section will contain detailed reports and analytics to help you understand your business performance.</p>
+                <p>Potential reports include:</p>
+                <ul>
+                    <li>Sales by Category</li>
+                    <li>Sales by Staff Member</li>
+                    <li>Profit & Margin Analysis</li>
+                    <li>Inventory Turnover Rate</li>
+                    <li>Peak Sales Hours</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script>
+        // Basic script to handle auth check and logout
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            const user = getUser();
+            document.getElementById('user-name').textContent = user ? user.fullName : 'Guest';
+            document.getElementById('logout-btn').addEventListener('click', logout);
+        });
+    </script>
+</body>
+</html>

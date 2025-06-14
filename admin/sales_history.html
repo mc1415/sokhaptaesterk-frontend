@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History - Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Logo"></div>
+            <nav class="sidebar-nav">
+                <a href="pos.html">POS System</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="inventory_management.html">Inventory</a>
+                <a href="sales_history.html" class="active">Sales</a>
+                <a href="staff_management.html">Staff</a>
+                <a href="reports.html">Reports</a>
+            </nav>
+            <footer class="sidebar-footer">
+                <div class="user-info"><span>Logged in as:</span><span id="user-name"></span></div>
+                <button id="logout-btn">Logout</button>
+            </footer>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1>Sales History</h1>
+                <!-- Filters could go here -->
+            </header>
+
+            <div class="content-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Time</th>
+                            <th>Cashier</th>
+                            <th>Total</th>
+                            <th>Payment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table-body">
+                        <!-- Rows will be inserted by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sale Details Modal -->
+    <div id="sale-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Transaction Details</h2>
+                <span class="close-btn">×</span>
+            </div>
+            <div id="sale-details-content">
+                <!-- Details will be inserted here by JS -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/modules/sales.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory - Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Logo"></div>
+            <nav class="sidebar-nav">
+                <a href="pos.html">POS System</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="inventory_management.html" class="active">Inventory</a>
+                <a href="sales_history.html">Sales</a>
+                <a href="staff_management.html">Staff</a>
+                <a href="reports.html">Reports</a>
+            </nav>
+            <footer class="sidebar-footer">
+                <div class="user-info"><span>Logged in as:</span><span id="user-name"></span></div>
+                <button id="logout-btn">Logout</button>
+            </footer>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1>Inventory Management</h1>
+                <div> <!-- Use a div to group buttons -->
+                  <button class="btn btn-secondary" id="adjust-stock-btn">Adjust Stock (In/Out)</button>
+                  <button class="btn btn-primary" id="add-product-btn">Add New Product</button>
+                </div>
+            </header>
+
+            <div class="content-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product Name (EN)</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body">
+                        <!-- Rows will be inserted by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="adjustment-modal" class="modal">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>Adjust Stock Quantity</h2>
+              <span class="close-btn">×</span>
+          </div>
+          <form id="adjustment-form">
+              <div class="form-group">
+                  <label for="adjustment-product">Product</label>
+                  <select id="adjustment-product" required>
+                      <!-- Product options will be inserted by JS -->
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label for="adjustment-type">Adjustment Type</label>
+                  <select id="adjustment-type" required>
+                      <option value="new_delivery">Stock In (New Delivery)</option>
+                      <option value="customer_return">Stock In (Customer Return)</option>
+                      <option value="damage_spoilage">Stock Out (Damage/Spoilage)</option>
+                      <option value="inventory_count_correction">Correction (Manual Count)</option>
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label for="adjustment-quantity">Quantity</label>
+                  <input type="number" id="adjustment-quantity" min="1" required>
+              </div>
+              <div class="form-group">
+                  <label for="adjustment-notes">Notes (e.g., Supplier, Invoice #)</label>
+                  <textarea id="adjustment-notes" rows="3"></textarea>
+              </div>
+              <button type="submit" class="btn btn-dark">Apply Adjustment</button>
+          </form>
+      </div>
+  </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/modules/inventory.js"></script>
+</body>
+</html>

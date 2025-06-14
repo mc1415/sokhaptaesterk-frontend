@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Low Stock Report - Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Logo"></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="inventory_management.html">Inventory</a>
+                <a href="pos.html">POS System</a>
+                <a href="staff_management.html">Staff Management</a>
+                <a href="sales_history.html">Sales History</a>
+                <a href="reports.html">Reports</a>
+                <!-- We can add a direct link here if needed, but the dashboard link is more intuitive -->
+            </nav>
+            <footer class="sidebar-footer">
+                <div class="user-info"><span>Logged in as:</span><span id="user-name"></span></div>
+                <button id="logout-btn">Logout</button>
+            </footer>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1>Low Stock Report</h1>
+                <a href="inventory_management.html" class="btn btn-secondary">Go to Full Inventory</a>
+            </header>
+
+            <div class="content-card">
+                <p>Showing all items that are at or below their reorder point (100 units for this prototype).</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Current Stock</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="low-stock-table-body">
+                        <!-- Rows will be inserted by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/apiService.js"></script>
+    <script src="js/modules/low_stock.js"></script>
+</body>
+</html>
