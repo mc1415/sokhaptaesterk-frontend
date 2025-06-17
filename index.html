@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sokha Ptaes Terk - Products</title>
+    <link rel="stylesheet" href="css/public.css"> <!-- New stylesheet for the public site -->
+    <link rel="icon" href="assets/logo.png" type="image/png">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="container">
+            <a href="index.html" class="logo-container">
+                <img src="assets/logo.png" alt="Sophea Phtes Nek Logo" style="width: 5rem; height: auto;">
+            </a>
+            <nav class="main-nav" id="main-nav"> 
+                <a href="index.html" class="active" data-i18n-key="nav_products">Products</a>
+            </nav>
+            <nav class="desktop-nav">
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+            </nav>
+            <div class="header-actions">
+                <div id="language-switcher"></div>
+                <input type="search" id="public-search" placeholder="Search for products...">
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open Menu">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero-section">
+            <div class="scrolling-container">
+                <div class="scrolling-text" id="bayon">
+                  * សូមស្វាគមន៍មកកាន់ សុខាផ្ទះទឹក! * ដេប៉ូលក់ភេសជ្ជៈគ្រប់ប្រភេទ បោះដុំនិងលក់រាយ * &nbsp;&nbsp;&nbsp; * សូមស្វាគមន៍មកកាន់ សុខាផ្ទះទឹក! * ដេប៉ូលក់ភេសជ្ជៈគ្រប់ប្រភេទ បោះដុំនិងលក់រាយ *
+                </div>
+            </div>
+        </section>
+
+        <section class="promotions-section">
+            <div class="product-grid" id="promotions-grid">
+                <!-- Sale items will be inserted here by JS -->
+            </div>
+        </section>
+
+        <section class="product-catalog">
+            <div class="product-filters" id="category-filters">
+                <!-- Category filter buttons will be inserted by JS -->
+            </div>
+            <div class="product-grid" id="public-product-grid">
+                <!-- Product cards will be inserted here by JS -->
+            </div>
+            
+        </section>
+
+        
+    </main>
+
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© 2025 Sokha Ptaes Terk. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <a href="https://t.me/sokleang99" class="sticky-contact-banner" target="_blank" rel="noopener noreferrer">
+        <img src="assets/telegram-icon.svg" alt="Telegram Logo">
+        <span class="banner-text" id="bayon">ចុចទីនេះ ដើម្បីឆាតកម្ម៉ង់</span>
+        <img src="assets/telegram-icon.svg" alt="Telegram Logo">
+    </a>
+
+    <template id="product-card-template">
+        <a href="#" class="product-card">
+            <div class="card-image-container">
+                <img src="" alt="Product Image" class="card-image">
+                <span class="stock-status"></span>
+                <span class="sale-tag">ON SALE</span>
+            </div>
+            <div class="card-content">
+                <h3 class="product-name">Product Name</h3>
+                <p class="product-category">Category</p>
+                <div class="card-footer">
+                    <span class="price-wrapper">
+                        <span class="current-price">฿0</span>
+                    </span>
+                    <span class="details-link">Find In Store →</span>
+                </div>
+            </div>
+        </a>
+    </template>
+    <script src="js/i18n.js"></script>
+    <script src="admin/js/config.js"></script>
+    <script src="admin/js/currencyHelper.js"></script>
+    <script src="js/public.js"></script> 
+</body>
+</html>
