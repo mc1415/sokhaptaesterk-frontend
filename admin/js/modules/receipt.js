@@ -1,25 +1,48 @@
 // frontend/admin/js/receipt.js
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- 1. Get the Sale ID from the URL (More Robust Method) ---
+    console.log('Receipt page loaded. Full URL:', window.location.href); // Log 1: See the full URL
+    
     const urlParams = new URLSearchParams(window.location.search);
-    const saleId = urlParams.get('sale_id');
+    
+    // Log all parameters to see what the browser sees
+    for(let param of urlParams.entries()) {
+        console.log('URL Parameter Found:', param[0], '=', param[1]);
+    }
+
+    // Defensive check for different capitalizations
+    const saleId = urlParams.get('saleId') || urlParams.get('saleid') || url_params.get('saleID');
+    
+    console.log('Extracted saleId:', saleId); // Log 2: See what was extracted
+
     if (!saleId) {
-        showError('No Sale ID provided in the URL.');
+        showError('No Sale ID could be extracted from the URL.');
         return;
     }
+
+    // --- 2. Fetch the data for this specific sale ---
     async function fetchAndRenderReceipt() {
         try {
+            console.log(`Fetching details for saleId: ${saleId}`);
             const saleDetails = await apiFetch(`/transactions/sales/${saleId}`);
+            
             if (!saleDetails) {
-                showError('Could not find details for this sale.');
+                showError('Could not find details for this sale in the database.');
                 return;
             }
+            console.log('API Response:', saleDetails);
+            
             populateReceipt(saleDetails);
+
             setTimeout(() => { window.print(); }, 500);
+
         } catch (error) {
             console.error('Failed to fetch or render receipt:', error);
             showError(`Failed to fetch receipt data: ${error.message}`);
         }
     }
+
     fetchAndRenderReceipt();
 });
 
