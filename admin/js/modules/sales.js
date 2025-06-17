@@ -1,36 +1,34 @@
-// In frontend/admin/js/modules/sales.js
+// frontend/admin/js/modules/sales.js
 document.addEventListener('DOMContentLoaded', () => {
-    
 
-    // --- Global Selections & State ---
+    // --- 1. SETUP & SELECTIONS ---
+    checkAuth();
     const user = getUser();
     const tableBody = document.getElementById('sales-table-body');
-    const modal = document.getElementById('sale-details-modal');
-    const modalContent = document.getElementById('sale-details-content');
-    const closeBtn = modal.querySelector('.close-btn');
-    let salesCache = []; // Use a cache for real data instead of mock data
+    let salesCache = []; // To store fetched sales data
 
-    // --- Initial Setup ---
+    // --- 2. INITIAL SETUP ---
     document.getElementById('user-name').textContent = user ? user.fullName : 'Guest';
     document.getElementById('logout-btn').addEventListener('click', logout);
 
-    // --- NEW API-DRIVEN FUNCTION ---
+    // --- 3. DATA FETCHING & RENDERING ---
+    
+    // Fetches sales from the API and triggers the table render
     async function fetchAndRenderSales() {
         try {
             tableBody.innerHTML = `<tr><td colspan="6" class="loading-cell">Loading sales history...</td></tr>`;
             
-            // Call the GET endpoint we created
+            // Call the GET endpoint to fetch all sales
             const salesData = await apiFetch('/transactions/sales');
             
-            salesCache = salesData; // Store the fetched data
-            renderSalesTable(salesCache); // Render the table with real data
+            salesCache = salesData || []; // Store the data and handle null response
+            renderSalesTable(salesCache); // Render the table with the fetched data
         } catch (error) {
             tableBody.innerHTML = `<tr><td colspan="6" class="error-cell">Error loading sales: ${error.message}</td></tr>`;
         }
     }
 
-    // --- MODIFIED TABLE RENDERING ---
-    // This function no longer fetches, it just renders what it's given
+    // Renders the provided sales data into the HTML table
     function renderSalesTable(sales) {
         tableBody.innerHTML = '';
         if (!sales || sales.length === 0) {
@@ -40,13 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sales.forEach(sale => {
             const row = document.createElement('tr');
-            // Use the data fields from our backend response
-            const saleTime = new Date(sale.transaction_time).toLocaleString();
+            const saleTime = new Date(sale.transaction_time || sale.created_at).toLocaleString();
 
+            // Use formatPrice helper for currency, and fallbacks for receipt number
             row.innerHTML = `
                 <td>#${sale.receipt_number || sale.id.substring(0, 8)}</td>
                 <td>${saleTime}</td>
-                <td>${sale.staff_name}</td>
+                <td>${sale.staff_name || 'N/A'}</td>
                 <td>${formatPrice(sale.total_amount, 'THB')}</td>
                 <td>${sale.payment_method}</td>
                 <td>
@@ -57,31 +55,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- MODAL & EVENT LISTENERS ---
-closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
-window.addEventListener('click', (event) => {
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
-});
+    // --- 4. EVENT LISTENERS ---
 
-// In sales.js
-tableBody.addEventListener('click', (e) => {
-    // Find the button that was clicked
-    const viewBtn = e.target.closest('.view-details-btn');
+    // Use event delegation to handle clicks on the "View Details" buttons
+    tableBody.addEventListener('click', (e) => {
+        // Find the button that was clicked using .closest()
+        const viewBtn = e.target.closest('.view-details-btn');
 
-    // If a "View Details" button was clicked...
-    if (viewBtn) {
-        const saleId = viewBtn.dataset.id;
-        
-        // ...and it has a sale ID...
-        if (saleId) {
-            // ...open the receipt page in a new tab, passing the ID as a URL parameter.
-            window.open(`receipt.html?saleId=${saleId}`, '_blank');
+        // If a "View Details" button was actually clicked...
+        if (viewBtn) {
+            const saleId = viewBtn.dataset.id;
+            
+            // ...and it has a sale ID...
+            if (saleId) {
+                // ...open the receipt page in a new tab, passing the ID as a URL parameter.
+                window.open(`receipt.html?saleId=${saleId}`, '_blank');
+            }
         }
-    }
-});
+    });
 
-    // --- INITIAL LOAD ---
-    fetchAndRenderSales(); // Call the new API-driven function
+    // --- 5. INITIAL LOAD ---
+    fetchAndRenderSales(); // Call the main function to start the page
 });
