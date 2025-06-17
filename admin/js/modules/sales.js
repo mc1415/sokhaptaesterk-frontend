@@ -79,27 +79,6 @@ tableBody.addEventListener('click', (e) => {
     }
 });
 
-// --- NEW MODAL RENDER FUNCTION ---
-function openDetailsModal(sale) {
-    let itemsHtml = '<ul class="modal-item-list">';
-    
-    // The items are now in sale.sale_items, and the name is directly on the item
-    sale.sale_items.forEach(item => {
-            itemsHtml += `<li>${item.quantity} x ${item.name_en} (@ ${formatPrice(item.price_at_sale, 'THB')})</li>`;
-        });
-        itemsHtml += '</ul>';
-
-    modalContent.innerHTML = `
-        <div class="detail-row"><strong>Transaction ID:</strong> <span>${sale.receipt_number}</span></div>
-        <div class="detail-row"><strong>Cashier:</strong> <span>${sale.staff.full_name}</span></div>
-        <div class="detail-row"><strong>Total:</strong> <span>$${parseFloat(sale.total_amount).toFixed(2)}</span></div>
-        <div class="detail-row"><strong>Payment:</strong> <span>${sale.payment_method}</span></div>
-        <hr>
-        <h4>Items Sold:</h4>
-        ${itemsHtml}
-    `;
-}
-
     // --- INITIAL LOAD ---
     fetchAndRenderSales(); // Call the new API-driven function
 });
