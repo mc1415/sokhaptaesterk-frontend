@@ -69,11 +69,14 @@ window.addEventListener('click', (event) => {
 tableBody.addEventListener('click', (e) => {
     // Find the button that was clicked
     const viewBtn = e.target.closest('.view-details-btn');
+
+    // If a "View Details" button was clicked...
     if (viewBtn) {
         const saleId = viewBtn.dataset.id;
         
-        // Simply open the receipt page and pass the sale ID in the URL
+        // ...and it has a sale ID...
         if (saleId) {
+            // ...open the receipt page in a new tab, passing the ID as a URL parameter.
             window.open(`receipt.html?saleId=${saleId}`, '_blank');
         }
     }
