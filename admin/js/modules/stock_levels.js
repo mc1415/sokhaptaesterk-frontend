@@ -130,7 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
         productSelect.innerHTML = '<option value="" disabled selected>Select a product...</option>';
         // Populate with the latest products from the cache
         productsInventoryCache.forEach(p => {
-            productSelect.innerHTML += `<option value="${p.id}">${productName} (SKU: ${p.sku})</option>`;
+            // FIX: Use getLocalizedProductName(p) to get the name for the current product 'p'
+            productSelect.innerHTML += `<option value="${p.id}">${getLocalizedProductName(p)} (SKU: ${p.sku || 'N/A'})</option>`;
         });
 
         warehouseSelect.innerHTML = '<option value="" disabled selected>Select receiving warehouse...</option>';
