@@ -24,6 +24,7 @@
                 <li><a href="pos.html"><i class="fa-solid fa-cash-register"></i><span class="nav-text" data-i18n-key="nav_pos">POS System</span></a></li>
                 <li><a href="inventory_management.html"><i class="fa-solid fa-boxes-stacked"></i><span class="nav-text" data-i18n-key="nav_inventory">Inventory</span></a></li>
                 <li class="active"><a href="stock_levels.html"><i class="fa-solid fa-chart-simple"></i><span class="nav-text" data-i18n-key="nav_stock_levels">Stock</span></a></li>
+                <li><a href="purchase_history.html"><i class="fa-solid fa-dolly"></i><span class="nav-text" data-i18n-key="nav_purchases">Purchases</span></a></li>
                 <li><a href="transfers.html"><i class="fa-solid fa-right-left"></i><span class="nav-text" data-i18n-key="nav_transfers">Transfers</span></a></li>
                 <li><a href="warehouses.html"><i class="fa-solid fa-warehouse"></i><span class="nav-text" data-i18n-key="nav_warehouses">Warehouses</span></a></li>
                 <li><a href="sales_history.html"><i class="fa-solid fa-receipt"></i><span class="nav-text" data-i18n-key="nav_sales_history">Sales</span></a></li>
@@ -54,9 +55,12 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="page-header">
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <h1 data-i18n-key="stock_levels_title">Centralized Stock Levels</h1>
                 <div class="header-actions">
-                    <button class="btn btn-success" id="purchase-in-btn">Purchase In Stock</button>
+                    <button class="btn btn-success" id="purchase-in-btn" data-i18n-key="purchase_in">Purchase In Stock</button>
                     
                     <!-- NEW: Wrapper for the search bar -->
                     <div class="search-bar-wrapper">
@@ -91,23 +95,31 @@
                 </div>
                 <form id="purchase-form">
                     <div class="form-group">
-                        <label for="purchase-product">Product</label>
+                        <label for="purchase-product" data-i18n-key="product">Product</label>
                         <select id="purchase-product" required></select>
                     </div>
                     <div class="form-group">
-                        <label for="purchase-warehouse">Warehouse (Receiving)</label>
+                        <label for="purchase-warehouse" data-i18n-key="warehouse-receiving">Warehouse (Receiving)</label>
                         <select id="purchase-warehouse" required></select>
                     </div>
                     <div class="form-group">
-                        <label for="purchase-quantity">Quantity Received</label>
+                        <label for="purchase-quantity" data-i18n-key="quantity-received">Quantity Received</label>
                         <input type="number" id="purchase-quantity" min="1" required>
                     </div>
+                      <div class="form-group">
+                        <label for="purchase-expiry-date" data-i18n-key="expiry-date">Expiry Date (Optional)</label>
+                        <input type="date" id="purchase-expiry-date">
+                    </div>
                     <div class="form-group">
-                        <label for="purchase-cost">Total Purchase Cost (Optional)</label>
+                        <label for="purchase-batch-number" data-i18n-key="lot-number">Batch/Lot Number (Optional)</label>
+                        <input type="text" id="purchase-batch-number" placeholder="ឧទាហរណ៍់៖ LOT[ថ្ងៃខែឆ្នាំដែលឥវ៉ាន់ចូល]: LOT21062025">
+                    </div>
+                    <div class="form-group">
+                        <label for="purchase-cost" data-i18n-key="purchase-cost">Total Purchase Cost (Optional)</label>
                         <input type="number" id="purchase-cost" step="0.01" placeholder="e.g., 5000">
                     </div>
                     <div class="form-group">
-                        <label for="purchase-notes">Notes (e.g., Supplier, Invoice #)</label>
+                        <label for="purchase-notes" data-i18n-key="notes">Notes (e.g., Supplier, Invoice #)</label>
                         <textarea id="purchase-notes" rows="2"></textarea>
                     </div>
                     <button type="submit" class="btn btn-dark">Add to Stock</button>

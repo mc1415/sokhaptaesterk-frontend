@@ -221,3 +221,59 @@ body { overflow: hidden; }
     left: 0;
     top: 0;
 }
+
+
+.pos-resizer {
+    /* --- Mobile View (Horizontal Handle) --- */
+    width: 100%;
+    height: 12px; /* A taller, easier-to-grab handle */
+    background-color: #e2e8f0; /* A light grey color */
+    cursor: ns-resize; /* North-South resize cursor */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+}
+
+/* Add a little grip icon inside the handle */
+.pos-resizer::after {
+    content: '•••';
+    color: #94a3b8;
+    font-size: 1.2rem;
+    line-height: 0;
+    letter-spacing: 2px;
+}
+
+/* --- Desktop View (Vertical Handle) --- */
+@media (min-width: 768px) {
+    .pos-resizer {
+        width: 12px; /* Make it vertical */
+        height: 100vh;
+        cursor: ew-resize; /* East-West resize cursor */
+        flex-direction: column; /* Stack the dots vertically */
+        border-top: none;
+        border-bottom: none;
+        border-left: 1px solid #cbd5e1;
+        border-right: 1px solid #cbd5e1;
+    }
+
+    .pos-resizer::after {
+        letter-spacing: 0;
+        line-height: 0.5; /* Adjust vertical spacing of dots */
+        writing-mode: vertical-rl; /* Rotate the dots */
+    }
+}
+
+
+/* --- JavaScript Helper Classes --- */
+
+/* Add a class to the body when dragging to prevent text selection */
+.is-resizing {
+    user-select: none;
+}
+.is-resizing .pos-products,
+.is-resizing .pos-cart {
+    /* Prevent pointer events on the content while resizing for smoother dragging */
+    pointer-events: none;
+}

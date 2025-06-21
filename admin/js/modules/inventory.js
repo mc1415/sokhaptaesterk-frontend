@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Page Elements
     const tableBody = document.getElementById('inventory-table-body');
     const addProductBtn = document.getElementById('add-product-btn');
+    const searchInput = document.getElementById('stock-filter-input');
 
     // Product Modal Elements
     const productModal = document.getElementById('product-modal');
@@ -17,9 +18,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const productForm = document.getElementById('product-form');
     const closeProductModalBtn = productModal.querySelector('.close-btn');
 
+    const imageFileInput = document.getElementById('product-image-file');
+    const imagePreview = document.getElementById('image-preview');
+
+    const removeImageBtn = document.getElementById('remove-image-btn');
+
     // --- 2. INITIAL PAGE SETUP ---
     document.getElementById('user-name').textContent = user ? user.fullName : 'Guest';
     document.getElementById('logout-btn').addEventListener('click', logout);
+
+    imageFileInput.addEventListener('change', () => {
+        const file = imageFileInput.files[0];
+        if (file) {
+            // Use FileReader to read the file and create a temporary local URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Set the preview image source and make it visible
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
     // --- 3. CORE DATA FETCHING ---
     async function fetchInitialData() {
@@ -49,15 +69,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 4. RENDERING & MODAL LOGIC ---
     function renderInventoryTable(products) {
         tableBody.innerHTML = '';
-        if (!products || products.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="6" class="loading-cell">No products found. Add one to get started!</td></tr>`;
+        // Get the current search term from the input field
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+        // Filter the master productCache based on the search term
+        const filteredProducts = productCache.filter(product => {
+            // Check if name_en exists and includes the search term
+            const nameEnMatch = product.name_en && product.name_en.toLowerCase().includes(searchTerm);
+
+            // Check if name_km exists and includes the search term
+            // We don't use .toLowerCase() for Khmer as it's not always applicable or necessary
+            const nameKmMatch = product.name_km && product.name_km.includes(searchTerm);
+
+            // Check if sku exists and includes the search term
+            const skuMatch = product.sku && product.sku.toLowerCase().includes(searchTerm);
+
+            // Return true if ANY of the conditions match
+            return nameEnMatch || nameKmMatch || skuMatch;
+        });
+
+        if (filteredProducts.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="loading-cell">No products match your search.</td></tr>`;
             return;
         }
 
-        // Sort products alphabetically for easier viewing
-        products.sort((a, b) => a.name_en.localeCompare(b.name_en));
+        // Sort the filtered products alphabetically
+        filteredProducts.sort((a, b) => a.name_en.localeCompare(b.name_en));
 
-        products.forEach(product => {
+        filteredProducts.forEach(product => {
             const row = document.createElement('tr');
             const stock = product.total_stock;
             let stockClass = '';
@@ -71,11 +110,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const productName = getLocalizedProductName(product);
 
             row.innerHTML = `
-                <td>${product.sku}</td>
-                <td>${productName}</td>
-                <td>${product.category}</td>
-                <td>${formatPrice(product.selling_price, 'THB')}</td>
-                <td><span class="stock-level ${stockClass}">${stock}</span></td>
+                <td data-label="SKU">${product.sku}</td>
+                <td data-label="Product Name">${productName}</td>
+                <td data-label="Category">${product.category}</td>
+                <td data-label="Price">${formatPrice(product.selling_price, 'THB')}</td>
+                <td data-label="Stock"><span class="stock-level ${stockClass}">${stock}</span></td>
                 <td>
                     <button class="btn btn-secondary btn-sm edit-btn" data-id="${product.id}">Edit</button>
                     <button class="btn btn-danger btn-sm delete-btn" data-id="${product.id}">Delete</button>
@@ -87,11 +126,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Product Modal Logic ---
     function openProductModal(product = null) {
-        productForm.reset();
+        // 1. Reset the form to its default state.
+        productForm.reset(); 
+
+        // 2. Specifically reset the file input and our custom 'removed' flag.
+        imageFileInput.value = ''; 
+        delete imagePreview.dataset.imageRemoved;
+
+        // 3. Set the default placeholder image. The CSS will automatically show the icon/prompt.
+        imagePreview.src = '../assets/placeholder.png'; // Make sure this path is correct
+
+        // 4. Set the default state for the 'is_active' checkbox.
         document.getElementById('product-is-active').checked = true;
 
-        if (product) { // Editing an existing product
+        if (product) {
+            // --- WE ARE EDITING AN EXISTING PRODUCT ---
             productModalTitle.textContent = 'Edit Product';
+
+            // Populate all form fields with the existing product's data
             document.getElementById('product-id').value = product.id;
             document.getElementById('product-name-en').value = product.name_en;
             document.getElementById('product-name-km').value = product.name_km || '';
@@ -100,13 +152,24 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('product-selling-price').value = product.selling_price;
             document.getElementById('product-purchase-price').value = product.purchase_price || 0;
             document.getElementById('product-reorder-point').value = product.reorder_point || 10;
-            document.getElementById('product-image-url').value = product.image_url || '';
             document.getElementById('product-description').value = product.description || '';
             document.getElementById('product-is-active').checked = product.is_active;
-        } else { // Adding a new product
+
+            // If the product has a real image URL, update the preview.
+            // The CSS will automatically hide the prompt and show the image.
+            if (product.image_url) {
+                imagePreview.src = product.image_url;
+            }
+
+        } else {
+            // --- WE ARE ADDING A NEW PRODUCT ---
             productModalTitle.textContent = 'Add New Product';
+            // Ensure the hidden ID field is empty
             document.getElementById('product-id').value = '';
+            // The image preview will correctly show the placeholder by default.
         }
+
+        // 5. Finally, display the fully prepared modal.
         productModal.style.display = 'block';
     }
 
@@ -136,33 +199,98 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handles submission for both Adding and Editing products
     async function handleProductFormSubmit(e) {
         e.preventDefault();
-        const productId = document.getElementById('product-id').value;
-        const productData = {
-            name_en: document.getElementById('product-name-en').value,
-            name_km: document.getElementById('product-name-km').value,
-            sku: document.getElementById('product-sku').value,
-            category: document.getElementById('product-category').value,
-            selling_price: parseFloat(document.getElementById('product-selling-price').value),
-            purchase_price: parseFloat(document.getElementById('product-purchase-price').value) || 0,
-            reorder_point: parseInt(document.getElementById('product-reorder-point').value) || 10,
-            image_url: document.getElementById('product-image-url').value,
-            description: document.getElementById('product-description').value,
-            is_active: document.getElementById('product-is-active').checked,
-        };
+        const saveBtn = document.getElementById('save-product-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
 
-        const method = productId ? 'PUT' : 'POST';
-        const endpoint = productId ? `/products/${productId}` : '/products';
+        // --- 1. GATHER INITIAL DATA ---
+        const productId = document.getElementById('product-id').value;
+        const file = imageFileInput.files[0];
+        const imageWasRemoved = imagePreview.dataset.imageRemoved === 'true';
+
+        // Clean up the 'removed' flag immediately after reading it
+        delete imagePreview.dataset.imageRemoved;
 
         try {
+            // Get the full existing product object to access its old image URL
+            const existingProduct = productId ? productCache.find(p => p.id === productId) : null;
+            const oldImageUrl = existingProduct ? existingProduct.image_url : null;
+            let finalImageUrl = oldImageUrl; // Start by assuming the URL won't change
+
+            // --- 2. HANDLE IMAGE LOGIC ---
+            if (file) {
+                // --- UPLOAD NEW IMAGE ---
+                saveBtn.textContent = 'Uploading Image...';
+
+                const fileExt = file.name.split('.').pop();
+                const fileName = `public/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, file);
+
+                if (uploadError) throw new Error(`Image upload failed: ${uploadError.message}`);
+
+                const { data: urlData } = supabase.storage
+                    .from('product-images')
+                    .getPublicUrl(fileName);
+                
+                finalImageUrl = urlData.publicUrl; // This is our new URL
+
+            } else if (imageWasRemoved) {
+                // --- REMOVE EXISTING IMAGE ---
+                finalImageUrl = null; // Set the URL to null in the database
+            }
+
+            // --- 3. PREPARE FINAL PRODUCT DATA ---
+            const productData = {
+                name_en: document.getElementById('product-name-en').value,
+                name_km: document.getElementById('product-name-km').value,
+                sku: document.getElementById('product-sku').value,
+                category: document.getElementById('product-category').value,
+                selling_price: parseFloat(document.getElementById('product-selling-price').value),
+                purchase_price: parseFloat(document.getElementById('product-purchase-price').value) || 0,
+                reorder_point: parseInt(document.getElementById('product-reorder-point').value) || 10,
+                description: document.getElementById('product-description').value,
+                is_active: document.getElementById('product-is-active').checked,
+                image_url: finalImageUrl, // Use the final calculated URL
+            };
+
+            // --- 4. SAVE PRODUCT DATA TO DATABASE ---
+            saveBtn.textContent = 'Saving Product Data...';
+            const method = productId ? 'PUT' : 'POST';
+            const endpoint = productId ? `/products/${productId}` : '/products';
+
             await apiFetch(endpoint, {
                 method: method,
                 body: JSON.stringify(productData)
             });
+
+            // --- 5. CLEAN UP OLD IMAGE FROM STORAGE ---
+            // This should happen only if we have a new URL or the URL was set to null,
+            // and there was a different, valid old URL to begin with.
+            if (oldImageUrl && oldImageUrl !== finalImageUrl) {
+                console.log("Removing old image from storage:", oldImageUrl);
+                // Extract the file path from the full URL to pass to the remove function
+                const oldImageFilePath = new URL(oldImageUrl).pathname.split('/product-images/').pop();
+                
+                await supabase.storage
+                    .from('product-images')
+                    .remove([oldImageFilePath]);
+            }
+
+            // --- 6. FINISH UP ---
             alert(`Product ${productId ? 'updated' : 'added'} successfully!`);
             productModal.style.display = 'none';
-            fetchInitialData(); // Refresh the entire table
+            fetchInitialData(); // Refresh the main inventory table
+
         } catch (error) {
-            alert(`Error saving product: ${error.message}`);
+            console.error("Error saving product:", error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            // Always re-enable the button
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Product';
         }
     }
 
@@ -231,6 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', renderInventoryTable);
+    }
 
     // --- 7. INITIAL DATA LOAD ---
     fetchInitialData();

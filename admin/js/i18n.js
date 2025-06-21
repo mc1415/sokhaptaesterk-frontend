@@ -49,6 +49,33 @@ function applyTranslations() {
 }
 
 /**
+ * ---- NEW FUNCTION ----
+ * Translates a key and replaces placeholders.
+ * @param {string} key The key to translate (e.g., 'product_expiring_soon.in_days_plural').
+ * @param {object} replacements An object of placeholders to replace (e.g., { count: 5 }).
+ * @returns {string} The translated and formatted string.
+ */
+function translate(key, replacements = {}) {
+    // Navigate through nested keys like 'parent.child.key'
+    const keys = key.split('.');
+    let translation = keys.reduce((obj, k) => (obj && obj[k] !== 'undefined') ? obj[k] : undefined, i18n_translations);
+
+    // If the key doesn't exist, return the key itself as a fallback
+    if (translation === undefined) {
+        return key;
+    }
+
+    // Replace all placeholders like {{variable}}
+    for (const placeholder in replacements) {
+        const regex = new RegExp(`{{${placeholder}}}`, 'g');
+        translation = translation.replace(regex, replacements[placeholder]);
+    }
+
+    return translation;
+}
+
+
+/**
  * Main function to initialize the internationalization on page load.
  */
 async function initI18n() {

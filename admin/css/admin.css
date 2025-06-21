@@ -49,6 +49,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.mobile-menu-toggle {
+  display: none;
+}
+
 /* FIX: Force form elements to inherit the body's font */
 button, input, select, textarea {
   font-family: inherit;
@@ -180,7 +184,6 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 0.75rem;
 }
 .user-details { display: flex; flex-direction: column; }
 #user-role { font-size: 0.75rem; color: #bdc3c7; }
@@ -230,13 +233,94 @@ button, input, select, textarea {
 
 /* --- MOBILE RESPONSIVE --- */
 @media (max-width: 768px) {
-  .sidebar { display: none; } /* On mobile, we would need JS to toggle the sidebar as an overlay. For now, we hide it. */
-  .main-content { margin-left: 0; padding: 1.5rem; }
-  .page-header h1 { font-size: 1.5rem; }
+  
+  /* --- 1. Main Content & Sidebar Layout --- */
+  
+  .main-content {
+    margin-left: 0; /* Content takes up full width */
+    padding: 1.5rem 1rem; /* Adjust padding for smaller screens */
+  }
+
+  .sidebar {
+    /* Position the sidebar off-screen to the left */
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    /* Make it an overlay with a shadow */
+    z-index: 1000; 
+    box-shadow: 0 0 25px rgba(0,0,0,0.2);
+  }
+
+  /* When the '.is-open' class is added, slide the sidebar into view */
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  /* The sidebar toggle button should be hidden on desktop */
+  .sidebar-toggle {
+    display: none;
+  }
+
+  /* --- 2. Mobile Header & Menu Button --- */
+
+  /* Show the mobile hamburger button */
+  .mobile-menu-toggle {
+    display: block; /* Make it visible on mobile */
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-dark);
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1; /* Helps with icon alignment */
+  }
+  .mobile-menu-toggle i {
+    font-size: 1.25rem;
+  }
+  
+  /* --- 3. Optional: Add a dark overlay when the menu is open --- */
+  .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 999; /* Below the sidebar but above the content */
+  }
+  .overlay.is-active {
+      display: block;
+  }
+  
+  /* Make the main page title smaller */
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
 }
 
 /* --- SHARED COMPONENTS (Buttons, Cards, Tables, etc.) --- */
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.page-header {
+    display: flex;
+    align-items: center; /* Vertically align all items */
+    flex-wrap: wrap;     /* Allow items to wrap to new lines on small screens */
+    margin-bottom: 2rem;
+    gap: 1rem 1.5rem;  /* 1rem vertical gap, 1.5rem horizontal gap */
+}
+
+/* Target the H1 title inside the header */
+.page-header h1 {
+    /* This is the key: it makes the title take up the available space,
+       pushing any elements that come after it to the right. */
+    flex-grow: 1;
+    font-size: 1.8rem; /* You can adjust this as needed */
+    margin: 0; /* Remove default h1 margin */
+}
+
+.page-header > *:last-child {
+    /* Set the left margin to auto */
+    margin-left: auto;
+}
 .page-header .header-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .content-card { background-color: var(--bg-light); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 2rem; }
 .table-container { overflow-x: auto; }
@@ -308,3 +392,85 @@ button, input, select, textarea {
 .lang-btn:not(.active):hover {
     background-color: #f0f0f0;
 }
+
+/* --- New Product Modal Image Area Styles --- */
+
+.image-uploader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the remove button */
+}
+
+/* The main container for the image area, acts as a button */
+.image-drop-zone {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+    display: flex; /* Use flex to center the prompt */
+    align-items: center;
+    justify-content: center;
+}
+.image-drop-zone:hover {
+    border-color: var(--primary-color);
+    background-color: #f1f5f9;
+}
+
+/* The image preview itself */
+#image-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    z-index: 5; /* Keep image on top of the prompt */
+    background-color: white; /* Hides prompt if image has transparency */
+}
+
+/* The placeholder icon and text prompt */
+.drop-zone-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #a0aec0;
+    z-index: 1; /* Below the image */
+}
+.drop-zone-prompt i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+.drop-zone-prompt span {
+    font-size: 0.9rem;
+}
+
+
+/* === THE CONDITIONAL VISIBILITY LOGIC === */
+
+/* If the image source is the placeholder, HIDE the image element */
+#image-preview[src*="placeholder.png"] {
+    display: none;
+}
+
+/* If the image source is NOT the placeholder, SHOW the image and HIDE the prompt */
+#image-preview:not([src*="placeholder.png"]) {
+    display: block;
+}
+#image-preview:not([src*="placeholder.png"]) + .drop-zone-prompt {
+    display: none;
+}
+
+/* The 'Remove Image' button below the drop zone */
+#remove-image-btn {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 0.75rem;
+}
+

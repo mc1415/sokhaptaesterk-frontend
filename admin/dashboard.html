@@ -26,6 +26,7 @@
                 <li><a href="pos.html"><i class="fa-solid fa-cash-register"></i><span class="nav-text" data-i18n-key="nav_pos">POS System</span></a></li>
                 <li><a href="inventory_management.html"><i class="fa-solid fa-boxes-stacked"></i><span class="nav-text" data-i18n-key="nav_inventory">Inventory</span></a></li>
                 <li><a href="stock_levels.html"><i class="fa-solid fa-chart-simple"></i><span class="nav-text" data-i18n-key="nav_stock_levels">Stock</span></a></li>
+                <li><a href="purchase_history.html"><i class="fa-solid fa-dolly"></i><span class="nav-text" data-i18n-key="nav_purchases">Purchases</span></a></li>
                 <li><a href="transfers.html"><i class="fa-solid fa-right-left"></i><span class="nav-text" data-i18n-key="nav_transfers">Transfers</span></a></li>
                 <li><a href="warehouses.html"><i class="fa-solid fa-warehouse"></i><span class="nav-text" data-i18n-key="nav_warehouses">Warehouses</span></a></li>
                 <li><a href="sales_history.html"><i class="fa-solid fa-receipt"></i><span class="nav-text" data-i18n-key="nav_sales_history">Sales</span></a></li>
@@ -56,6 +57,9 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="page-header">
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <h1 data-i18n-key="dashboard_title">Dashboard</h1>
                 <div id="date-display"></div>
             </header>
@@ -86,6 +90,13 @@
                     <h3 data-i18n-key="low_stock_alerts">Low Stock Alerts</h3>
                     <ul id="low-stock-list" class="data-list">
                         <!-- Items will be inserted here by JS -->
+                    </ul>
+                </div>
+                <div class="content-card warning">
+                    <h3 data-i18n-key="expiring_soon_title">Expiring Soon (Next 30 Days)</h3>
+                    <ul id="expiring-soon-list" class="data-list">
+                        <!-- List items will be inserted here by JS -->
+                        <li>Loading...</li>
                     </ul>
                 </div>
             </div>

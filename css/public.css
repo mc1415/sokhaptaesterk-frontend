@@ -37,16 +37,66 @@ a { text-decoration: none; color: var(--accent); }
 .hero-section p { font-size: 1.2rem; color: var(--text-light); }
 
 /* Product Catalog */
-.product-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; justify-content: center; }
-.filter-btn { padding: 0.6rem 1.2rem; border-radius: 99px; border: 1px solid var(--border-color); background: var(--white); cursor: pointer; font-weight: 600; }
-.filter-btn.active { background: var(--primary-dark); color: var(--white); border-color: var(--primary-dark); }
+/* Product Catalog */
+
+/* This is the new outer container that will handle scrolling */
+.filter-scroll-container {
+    position: relative; /* Needed for the fade-out effect */
+    margin-bottom: 2rem;
+}
+
+/* This is the inner container that holds the buttons */
+.product-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    overflow-x: auto;   /* THIS MAKES IT SCROLLABLE ON ALL DEVICES */
+    flex-wrap: nowrap;
+    padding: 0.5rem 1rem;
+    margin: 0 -1rem;
+
+    /* OPTIONAL: Style the scrollbar for desktop for a more modern look */
+    /* This works on Chrome, Edge, and Safari */
+    &::-webkit-scrollbar {
+        height: 8px; /* Make the scrollbar a bit thinner */
+    }
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1; /* Light grey track */
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #ccc; /* A darker grey thumb */
+        border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background: #aaa; /* Even darker on hover */
+    }
+}
+
+/* Style for the filter buttons themselves (pills) */
+.filter-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 99px; /* Pill shape */
+    border: 1px solid var(--border-color);
+    background: var(--white);
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap; /* Prevent text inside buttons from wrapping */
+    transition: all 0.2s ease;
+}
+
+.filter-btn.active {
+    background: var(--primary-dark);
+    color: var(--white);
+    border-color: var(--primary-dark);
+}
+
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
 
 /* Product Card */
 .product-card { display: block; background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease; }
 .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 .card-image-container { position: relative; }
-.card-image { width: 100%; height: 200px; object-fit: cover; }
+.card-image { width: 100%; height: 200px; object-fit: contain; }
 .stock-status { position: absolute; top: 10px; right: 10px; padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; color: var(--white); }
 .stock-status.in-stock { background-color: var(--success); }
 .stock-status.low-stock { background-color: var(--warning); }
@@ -214,7 +264,7 @@ h2 {
 
         @media (min-width: 1025px) {
             .scrolling-text {
-                animation-duration: 12s; /* Applying user-provided speed */
+                animation-duration: 15s; /* Applying user-provided speed */
             }
         }
 
@@ -357,10 +407,7 @@ h2 {
     }
     
     /* --- SPECIFIC STYLES FOR SEARCH ON MOBILE --- */
-    #public-search {
-        width: 100%; /* Makes it flexible */
-        max-width: 250px; /* Adjust as needed */
-    }
+
 
     /* --- STYLES TO MAKE THE MOBILE BUTTON MATCH THE SEARCH BOX --- */
     .mobile-menu-btn {
@@ -447,4 +494,162 @@ h2 {
         background-color: rgba(0,0,0,0.05);
     }
 
+}
+
+/* --- Cart Icon --- */
+/* --- Cart Icon --- */
+.cart-icon-button { 
+    background: none; 
+    border: none; 
+    cursor: pointer; 
+    position: relative; 
+    /* Add this for better alignment */
+    color: var(--text-dark); 
+}
+
+/* ADD THIS NEW RULE FOR THE ICON */
+.cart-icon-button i {
+    font-size: 1.5rem; /* Adjust size as needed */
+    vertical-align: middle; /* Helps with alignment */
+}
+
+.cart-badge {
+    position: absolute; 
+    top: -5px; 
+    right: -10px; 
+    /* ... rest of badge styles are fine */
+}
+
+/* --- Add to Cart Form on Product Page --- */
+.add-to-cart-form { margin: 2rem 0; padding: 1.5rem; background: #eaf2fa; border-radius: 8px; }
+.add-to-cart-form h3 { margin-top: 0; }
+.cart-controls { display: flex; gap: 1rem; align-items: center; }
+.cart-controls input[type="number"] { width: 70px; padding: 0.75rem; text-align: center; border: 1px solid var(--border-color); border-radius: 5px; }
+.btn-primary { background-color: var(--accent); color: white; border: none; }
+.btn-primary:hover { background-color: #4a8ac9; }
+
+/* --- Cart Modal --- */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.modal-content { background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; max-height: 90vh; overflow-y: auto; }
+.close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--text-light); }
+.modal-content h2 { margin-top: 0; text-align: center; }
+#cart-items-container { margin: 1.5rem 0; }
+.cart-item { display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem; }
+.cart-item-image { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
+.cart-item-details { flex-grow: 1; }
+.cart-item-name, .cart-item-price { margin: 0; }
+.cart-item-name { font-weight: 600; }
+.cart-item-actions input { width: 50px; text-align: center; }
+.cart-item-remove-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.9rem; }
+.cart-summary { display: flex; justify-content: space-between; font-size: 1.2rem; margin: 1rem 0; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+.form-group input { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 5px; box-sizing: border-box; }
+.btn-full-width { width: 100%; padding: 1rem; }
+
+@media (max-width: 768px) {
+
+    /* --- General Layout & Typography --- */
+    .container {
+        padding: 0 1rem; /* Add a little more side padding on mobile */
+    }
+
+    /* --- Header Adjustments --- */
+    /* --- Header Adjustments --- */
+    .desktop-nav, .main-nav {
+        display: none;
+    }
+
+    .site-header .container {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping */
+        align-items: center; /* Vertically align everything */
+        justify-content: space-between; /* Push logo left and icons right */
+        gap: 1rem; /* Space between rows when they wrap */
+    }
+
+    /* Container for just the cart and mobile menu */
+    .header-icons {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem; /* Space between cart and menu */
+    }
+
+    /* The search bar and language switcher */
+    .header-actions {
+        order: 3; /* This will make it jump to the next line on small screens */
+        width: 100%; /* Make it take the full width on its new line */
+        display: flex;
+    }
+
+    #public-search {
+        flex-grow: 1; /* Search bar takes up most of the space */
+    }
+
+    /* This targets the Font Awesome mobile menu icon */
+    .mobile-menu-btn i {
+        font-size: 1.5rem;
+}
+
+    /* --- Product Detail Page Specifics --- */
+    .product-detail-layout {
+        /* Change from a 2-column grid to a single-column layout */
+        grid-template-columns: 1fr; 
+        gap: 1.5rem; /* Reduce the gap between image and info */
+        margin-top: 1.5rem;
+    }
+
+    .price-wrapper-detail .current-price, #detail-price {
+        font-size: 2.2rem; /* Make the price a bit smaller */
+    }
+
+    /* Make the buttons full-width for easy tapping */
+    .add-to-cart-form .btn, .product-info .btn-secondary {
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box; /* Important for full-width buttons */
+        padding: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .cart-controls {
+        /* Stack the quantity input and button */
+        flex-direction: column;
+        align-items: stretch; /* Make them both full width */
+    }
+    
+    .cart-controls input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* --- Product Grid on Index Page --- */
+    .product-grid {
+        /* Change from auto-fill to a fixed 2-column grid */
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    /* --- Cart Modal on Mobile --- */
+    .modal-content {
+        width: 95%; /* Use almost the full screen width */
+        max-height: 85vh; /* Ensure it doesn't take up the full height */
+    }
+
+    header.site-header img {
+        width: 4rem;
+    }
+
+    .product-filters {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .product-filters::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    
+    /* On mobile, we also don't need the fade-out effect as swiping is natural */
+    .filter-scroll-container::after {
+        display: none;
+    }
 }

@@ -1,13 +1,18 @@
 // In frontend/admin/js/modules/pos.js
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
+    await window.currencyInitializationPromise;
     // --- 1. CHECK AUTH & GET USER ---
     
     const user = getUser();
 
+    // --- NOW, ALL YOUR ORIGINAL POS CODE CAN RUN SAFELY ---
+    console.log("POS script is now running, currencies are ready.");
+
     // --- 2. DEFINE STATE VARIABLES ---
     let productCache = [];
     let cart = [];
+    let lastCompletedSale = null;
 
     // --- 3. SELECT ALL HTML ELEMENTS AT THE TOP ---
     const productGrid = document.getElementById('product-grid');
@@ -38,30 +43,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const newSaleBtn = document.getElementById('new-sale-btn');
     const closePostSaleModalBtn = postSaleModal.querySelector('.close-btn');
 
-    let lastCompletedSale = null; // Variable to hold the last sale's data
-
     // --- 4. INITIAL PAGE SETUP ---
     userNameSpan.textContent = user ? user.fullName : 'Guest';
 
     // --- 5. DEFINE ALL FUNCTIONS ---
 
     function toBase64(str) {
-        // 1. encodeURIComponent to handle multi-byte chars
-        // 2. unescape to convert %xx notation to single-byte chars
-        // 3. btoa to convert single-byte chars to Base64
         return btoa(unescape(encodeURIComponent(str)));
     }
 
     function getLocalizedProductName(product) {
-        const lang = getCurrentLanguage(); // from i18n.js
-        // If language is Khmer and name_km exists, use it. Otherwise, default to English.
+        const lang = getCurrentLanguage();
         return lang === 'km' && product.name_km ? product.name_km : product.name_en;
     }
 
     async function fetchAndRenderInitialData() {
         try {
             productGrid.innerHTML = `<p>Loading products...</p>`;
-            const products = await apiFetch('/products');
+            const products = await apiFetch('/products'); // This should be your admin endpoint
             productCache = products || [];
             renderProducts();
         } catch (error) {
@@ -70,53 +69,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderProducts() {
-    productGrid.innerHTML = '';
-    const searchTerm = searchInput.value.toLowerCase();
-    
-    const filteredProducts = productCache.filter(p => 
-        p.name_en.toLowerCase().includes(searchTerm) || 
-        (p.sku && p.sku.toLowerCase().includes(searchTerm))
-    );
-
-    if (filteredProducts.length === 0) {
-        productGrid.innerHTML = '<p>No products available or match your search.</p>';
-        return;
-    }
-
-    filteredProducts.forEach(product => {
-        const productTile = document.createElement('div');
-        productTile.className = 'product-tile';
-        if (product.total_stock <= 0) {
-            productTile.classList.add('out-of-stock');
-        }
-        productTile.dataset.id = product.id;
-
-        // This logic correctly handles products with and without images
-        const mainContent = product.image_url
-            ? `<img class="product-tile-image" src="${product.image_url}" alt="${product.name_en}">`
-            : `<div class="product-tile-name-placeholder">${product.name_en}</div>`;
-
-        const productName = getLocalizedProductName(product);
-
-        // The generated HTML structure works perfectly with the new list-view CSS
-        productTile.innerHTML = `
-            <div class="product-tile-image-container">
-                <img class="product-tile-image" src="${product.image_url || 'https://via.placeholder.com/150'}" alt="${productName}">
-            </div>
-            <div class="product-tile-info">
-                <p class="product-tile-name">${productName}</p>
-                <p class="product-tile-price">${formatPrice(product.selling_price, 'THB')}</p>
-            </div>
-        `;
+        productGrid.innerHTML = '';
+        const searchTerm = searchInput.value.toLowerCase();
         
-        productTile.addEventListener('click', () => {
-            if (product.total_stock > 0) {
-                addToCart(product.id);
+        const filteredProducts = productCache.filter(p => 
+            p.name_en.toLowerCase().includes(searchTerm) || 
+            (p.sku && p.sku.toLowerCase().includes(searchTerm))
+        );
+
+        if (filteredProducts.length === 0) {
+            productGrid.innerHTML = '<p>No products available or match your search.</p>';
+            return;
+        }
+
+        filteredProducts.forEach(product => {
+            const productTile = document.createElement('div');
+            productTile.className = 'product-tile';
+            if (product.total_stock <= 0) {
+                productTile.classList.add('out-of-stock');
             }
+            productTile.dataset.id = product.id;
+            const productName = getLocalizedProductName(product);
+
+            productTile.innerHTML = `
+                <div class="product-tile-image-container">
+                    <img class="product-tile-image" src="${product.image_url || 'https://via.placeholder.com/150'}" alt="${productName}">
+                </div>
+                <div class="product-tile-info">
+                    <p class="product-tile-name">${productName}</p>
+                    <p class="product-tile-price">${formatPrice(product.selling_price, 'THB')}</p>
+                </div>
+            `;
+            
+            productTile.addEventListener('click', () => {
+                if (product.total_stock > 0) {
+                    addToCart(product.id);
+                }
+            });
+            productGrid.appendChild(productTile);
         });
-        productGrid.appendChild(productTile);
-    });
-}
+    }
 
     function addToCart(productId) {
         const product = productCache.find(p => p.id === productId);
@@ -167,10 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cartItemElement = document.createElement('div');
                 cartItemElement.className = 'cart-item';
                 const itemTotal = item.selling_price * item.quantity;
-
                 const productName = getLocalizedProductName(item);
 
-                // --- FIX: Restructured innerHTML to match the new 3-column grid in CSS for better alignment. ---
                 cartItemElement.innerHTML = `
                     <div class="cart-item-details">
                         <span class="cart-item-name">${productName}</span>
@@ -191,17 +181,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateCartSummary() {
         const subtotal = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
-        const tax = subtotal * 0.00; // Assuming 0% tax as per the HTML
+        const tax = subtotal * 0.00;
         const total = subtotal + tax;
         
-        // This logic assumes a 'formatPrice' function exists in one of the included scripts (e.g., currencyHelper.js)
-        // and that it can handle different currencies.
-        summarySubtotal.textContent = formatPrice(subtotal, 'THB');
-        summaryTax.textContent = formatPrice(tax, 'THB');
-        summaryTotal.textContent = formatPrice(total, 'THB');
-        summaryTotalUsd.textContent = formatPrice(total, 'USD'); 
-        paymentTotalDue.textContent = formatPrice(total, 'THB');
-        paymentTotalDueUsd.textContent = formatPrice(total, 'USD'); 
+        // These elements are always visible, so they are probably safe.
+        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'THB');
+        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'THB');
+        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'THB');
+        if (summaryTotalUsd) summaryTotalUsd.textContent = formatPrice(total, 'USD'); 
+        
+        // THE FIX: These elements are inside a modal. Only update them if they exist.
+        if (paymentTotalDue) {
+            paymentTotalDue.textContent = formatPrice(total, 'THB');
+        }
+        if (paymentTotalDueUsd) {
+            paymentTotalDueUsd.textContent = formatPrice(total, 'USD');
+        }
     }
 
     function clearSale() {
@@ -215,8 +210,10 @@ async function processSale(paymentMethod) {
     if (cart.length === 0) return;
 
     // Use a different button for the loading state depending on the context
-    const buttonToToggle = paymentMethod === 'cash' ? confirmPaymentBtn : null;
-    if (buttonToToggle) toggleButtonLoading(buttonToToggle, true, 'Confirm Payment & New Sale');
+    // This now correctly does nothing if the payment method isn't 'cash'
+    if (paymentMethod === 'cash') {
+        toggleButtonLoading(confirmPaymentBtn, true, 'Confirm Payment & New Sale');
+    }
 
     const totalAmount = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
     const saleItemsPayload = cart.map(item => ({
@@ -230,27 +227,28 @@ async function processSale(paymentMethod) {
             method: 'POST',
             body: JSON.stringify({
                 warehouse_id: 'c451f784-5f1d-4b86-823d-1e75660a6b6d',
-                user_id: user.id,
                 sale_items: saleItemsPayload,
                 total_amount: totalAmount,
-                payment_method: paymentMethod // This will be 'cash' or 'khqr'
+                payment_method: paymentMethod
             })
         });
 
         lastCompletedSale = saleResult.transactionData;
         
-        // Hide all modals before showing the post-sale options
         document.getElementById('qr-code-modal').style.display = 'none';
         paymentModal.style.display = 'none';
 
         clearSale();
-        fetchAndRenderInitialData();
+        // Don't call fetchAndRenderInitialData() here, as it can cause re-render issues.
+        // The UI is cleared, ready for the next sale. A full refresh can be done later.
         postSaleModal.style.display = 'block';
 
     } catch (error) {
         alert(`Sale failed: ${error.message}`);
     } finally {
-        if (buttonToToggle) toggleButtonLoading(buttonToToggle, false, 'Confirm Payment & New Sale');
+        if (paymentMethod === 'cash') {
+            toggleButtonLoading(confirmPaymentBtn, false, 'Confirm Payment & New Sale');
+        }
     }
 }
 
@@ -283,26 +281,45 @@ async function generateAndShowQrCode() {
     const qrDisplayArea = document.getElementById('qr-display-area');
     const sliderContainer = document.getElementById('slide-to-pay-container');
     
-    paymentModal.style.display = 'none'; // Hide the first modal
+    paymentModal.style.display = 'none';
     qrDisplayArea.innerHTML = '<p>Generating secure QR Code...</p>';
-    sliderContainer.style.display = 'none'; // Hide slider until QR is loaded
-    qrModal.style.display = 'block'; // Show the QR modal
+    sliderContainer.style.display = 'none';
+    qrModal.style.display = 'block';
 
-    // 2. Prepare data for QR generation (No changes here)
-    const totalAmount = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+    // --- START OF THE FIX ---
+
+    // 2. Prepare data for QR generation (with new dynamic rates)
+    const totalAmountInTHB = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
     const tran_id = `SALE-${Date.now()}`;
-    const amountInUSD = (totalAmount * AppConfig.SUPPORTED_CURRENCIES.USD.rate).toFixed(2);
+
+    // 2a. Get the USD exchange rate from our global currency object.
+    const usdRate = window.AppCurrencies.USD?.rate_to_base;
+
+    // 2b. Add a safety check. If the rate isn't loaded, stop the function.
+    if (!usdRate) {
+        qrDisplayArea.innerHTML = `<p style="color:red; font-weight: bold;">Error: USD exchange rate not loaded. Cannot generate QR code.</p>`;
+        return; // Stop execution
+    }
+
+    // 2c. Perform the correct conversion for the total amount.
+    const amountInUSD = (totalAmountInTHB / usdRate).toFixed(2);
+    
+    // 2d. Perform the correct conversion for each item in the cart.
     const itemsArray = cart.map(item => ({
         name: item.name_en,
         quantity: parseInt(item.quantity),
-        price: parseFloat((item.selling_price * AppConfig.SUPPORTED_CURRENCIES.USD.rate).toFixed(2))
+        price: parseFloat((item.selling_price / usdRate).toFixed(2)) // Use division here as well
     }));
+
+    // --- END OF THE FIX ---
+
     const itemsJsonString = JSON.stringify(itemsArray);
-    const itemsBase64 = toBase64(itemsJsonString);
+    // Assuming toBase64 is a function you have defined elsewhere
+    const itemsBase64 = toBase64(itemsJsonString); 
 
     const payload = { tran_id, amount: amountInUSD, items_base64: itemsBase64 };
 
-    // 3. Call backend to get QR code
+    // 3. Call backend to get QR code (no changes here)
     try {
         const qrData = await apiFetch('/payments/aba-qr', {
             method: 'POST',
@@ -311,25 +328,24 @@ async function generateAndShowQrCode() {
 
         if (qrData && qrData.qrImage) {
             qrDisplayArea.innerHTML = `<img src="${qrData.qrImage}" alt="Scan to Pay" style="max-width: 100%; height: auto;">`;
-            sliderContainer.style.display = 'block'; // Show the slider
+            sliderContainer.style.display = 'block';
         } else {
             throw new Error(qrData.error || 'QR image not found in API response.');
         }
 
     } catch (error) {
         qrDisplayArea.innerHTML = `<p style="color:red; font-weight: bold;">Error: ${error.message}</p>`;
-        sliderContainer.style.display = 'none'; // Keep slider hidden on error
+        sliderContainer.style.display = 'none';
     }
 
-    // --- NEW SLIDER LOGIC ---
+    // --- Slider Logic (no changes here) ---
     const thumb = document.getElementById('slider-thumb');
     let isDown = false;
     let startX;
-    let scrollLeft;
 
     thumb.addEventListener('mousedown', (e) => {
         isDown = true;
-        thumb.style.transition = 'none'; // Remove transition for smooth sliding
+        thumb.style.transition = 'none';
         startX = e.pageX - thumb.offsetLeft;
     });
 
@@ -337,9 +353,8 @@ async function generateAndShowQrCode() {
         if (!isDown) return;
         isDown = false;
         const maxSlide = sliderContainer.offsetWidth - thumb.offsetWidth;
-        thumb.style.transition = 'left 0.3s ease'; // Add back transition for snapping
-        // If thumb is not at the end, snap it back
-        if (thumb.offsetLeft < maxSlide - 5) { // -5 for a small tolerance
+        thumb.style.transition = 'left 0.3s ease';
+        if (thumb.offsetLeft < maxSlide - 5) {
             thumb.style.left = '0px';
         }
     });
@@ -348,21 +363,20 @@ async function generateAndShowQrCode() {
         if (!isDown) return;
         e.preventDefault();
         const x = e.pageX - sliderContainer.offsetLeft;
-        const walk = x - startX;
+        const walk = x - startX; // This seems incorrect, should likely just be x
         const maxSlide = sliderContainer.offsetWidth - thumb.offsetWidth;
 
-        // Keep the thumb within the container bounds
         let newLeft = Math.max(0, Math.min(maxSlide, walk));
         thumb.style.left = `${newLeft}px`;
 
-        // If the slider reaches the end, complete the sale
-        if (newLeft >= maxSlide - 5) { // Use a small tolerance
+        if (newLeft >= maxSlide - 5) {
             isDown = false;
-            thumb.style.pointerEvents = 'none'; // Prevent further interaction
-            processSale('khqr'); // Process the sale as a 'khqr' payment
+            thumb.style.pointerEvents = 'none';
+            // Assuming processSale is a function you have defined elsewhere
+            processSale('khqr'); 
         }
     });
-} 
+}
 
 async function completeSale(paymentMethodOverride = null) {
     if (cart.length === 0) return;
@@ -505,6 +519,58 @@ function toggleButtonLoading(button, isLoading, originalText) {
             closeModal();
         }
     });
+
+    const resizer = document.getElementById('pos-resizer');
+    const leftPanel = document.querySelector('.pos-products');
+    const rightPanel = document.querySelector('.pos-cart');
+
+    let isResizing = false;
+
+    const onMouseDown = (e) => {
+        isResizing = true;
+        document.body.classList.add('is-resizing'); // Add class to prevent text selection
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        // For touch devices
+        document.addEventListener('touchmove', onMouseMove);
+        document.addEventListener('touchend', onMouseUp);
+    };
+
+    const onMouseMove = (e) => {
+        if (!isResizing) return;
+        
+        // Use pageX/Y and check for touch events for cross-device compatibility
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        // Check if we are in mobile (vertical) or desktop (horizontal) layout
+        if (window.innerWidth < 768) {
+            // Mobile: Vertical resizing
+            const totalHeight = window.innerHeight;
+            const newTopHeight = (clientY / totalHeight) * 100;
+            leftPanel.style.height = `${newTopHeight}vh`;
+            rightPanel.style.height = `${100 - newTopHeight}vh`;
+        } else {
+            // Desktop: Horizontal resizing
+            const totalWidth = window.innerWidth;
+            const newLeftWidth = (clientX / totalWidth) * 100;
+            leftPanel.style.width = `${newLeftWidth}%`;
+            rightPanel.style.width = `${100 - newLeftWidth}%`;
+        }
+    };
+
+    const onMouseUp = () => {
+        isResizing = false;
+        document.body.classList.remove('is-resizing');
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        // For touch devices
+        document.removeEventListener('touchmove', onMouseMove);
+        document.removeEventListener('touchend', onMouseUp);
+    };
+
+    resizer.addEventListener('mousedown', onMouseDown);
+    resizer.addEventListener('touchstart', onMouseDown); // Add touch support
 
     // --- 7. INITIAL DATA LOAD ---
     fetchAndRenderInitialData();

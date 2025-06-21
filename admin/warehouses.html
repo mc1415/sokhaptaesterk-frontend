@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Warehouse Management - Admin Panel</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/warehouses.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
@@ -24,6 +25,7 @@
                 <li><a href="pos.html"><i class="fa-solid fa-cash-register"></i><span class="nav-text" data-i18n-key="nav_pos">POS System</span></a></li>
                 <li><a href="inventory_management.html"><i class="fa-solid fa-boxes-stacked"></i><span class="nav-text" data-i18n-key="nav_inventory">Inventory</span></a></li>
                 <li><a href="stock_levels.html"><i class="fa-solid fa-chart-simple"></i><span class="nav-text" data-i18n-key="nav_stock_levels">Stock</span></a></li>
+                <li><a href="purchase_history.html"><i class="fa-solid fa-dolly"></i><span class="nav-text" data-i18n-key="nav_purchases">Purchases</span></a></li>
                 <li><a href="transfers.html"><i class="fa-solid fa-right-left"></i><span class="nav-text" data-i18n-key="nav_transfers">Transfers</span></a></li>
                 <li class="active"><a href="warehouses.html"><i class="fa-solid fa-warehouse"></i><span class="nav-text" data-i18n-key="nav_warehouses">Warehouses</span></a></li>
                 <li><a href="sales_history.html"><i class="fa-solid fa-receipt"></i><span class="nav-text" data-i18n-key="nav_sales_history">Sales</span></a></li>
@@ -54,6 +56,9 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="page-header">
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <h1 data-i18n-key="warehouses_title">Warehouse Management</h1>
                 <button class="btn btn-primary" id="add-warehouse-btn">Add New Warehouse</button>
             </header>

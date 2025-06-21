@@ -50,6 +50,20 @@ function applyTranslations() {
     });
 }
 
+/**
+ * Gets a translated string for a given key.
+ * @param {string} key - The key for the translation (e.g., 'th_stock_prefix').
+ * @param {string} fallback - The default text to use if the key isn't found.
+ * @returns {string} The translated string or the fallback.
+ */
+function getTranslation(key, fallback) {
+    // 'translations' is the global object holding the loaded language data
+    if (translations && translations[key]) {
+        return translations[key];
+    }
+    return fallback || key; // Return the fallback text or the key itself
+}
+
 // Main function to initialize the internationalization
 async function initI18n() {
     await loadTranslations();

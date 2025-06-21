@@ -1,5 +1,8 @@
 // frontend/admin/js/receipt-80mm.js
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+
+    await window.currencyInitializationPromise;
+
     const saleDataString = localStorage.getItem('currentReceiptData');
     if (!saleDataString) {
         document.body.innerHTML = '<h1>Error: No receipt data found.</h1>';
@@ -9,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         const sale = JSON.parse(saleDataString);
         populateReceipt(sale);
-        localStorage.removeItem('currentReceiptData'); // Clean up
         setTimeout(() => window.print(), 500);
     } catch (error) {
         console.error('Failed to render receipt:', error);

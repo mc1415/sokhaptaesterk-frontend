@@ -2,12 +2,13 @@
   "nav_dashboard": "Dashboard",
   "nav_pos": "POS System",
   "nav_inventory": "Inventory",
-  "nav_stock_levels": "Stock Levels",
+  "nav_stock_levels": "Stock",
   "nav_transfers": "Transfers",
   "nav_warehouses": "Warehouses",
-  "nav_sales_history": "Sales History",
+  "nav_sales_history": "Sales",
   "nav_staff": "Staff",
   "nav_reports": "Reports",
+  "nav_purchases": "Purchases",
   "logged_in_as": "Logged in as:",
   "logout": "Logout",
   "toggle_sidebar": "Toggle Sidebar",
@@ -23,15 +24,36 @@
   "settings_title": "Settings",
   "language_preference": "Language Preference",
   "language_desc": "Choose the display language for the admin panel.",
+  "exchange_rates": "Exchange Rates",
+  "exchange_rates_desc": "Set the conversion rates relative to your base currency (THB).",
+  "base_currency_label": "Base Currency ({code})",
+  "currency_rate_label": "1 {code} = ? {baseCode}",
+  "base_currency_note": "Rate is always 1.0",
+  "save_rates_btn": "Save Rates",
 
   "sales_today": "Sales Today",
   "sales_this_month": "Sales This Month",
   "low_stock_items": "Low Stock Items",
   "top_selling_products": "Top Selling Products (Last 30 Days)",
   "low_stock_alerts": "Low Stock Alerts",
+  "low_stock_item_details": "(Only {{quantity}} left)",
   "all_stock_healthy": "All stock levels are healthy!",
   "units_left": "left",
   "units_sold": "Units Sold",
+  "expiring_soon_title": "Expiring Soon (Next 30 Days)",
+  "product_expiring_soon": {
+    "no_products": "No products expiring in the next 30 days. ✅",
+    "in_days": "in {{count}} day",
+    "in_days_plural": "in {{count}} days",
+    "in_1_day": "in 1 day",
+    "expired": "Expired!"
+  },
+  "product_info": {
+    "in_warehouse": "in {{warehouseName}} (Batch: {{batchNumber}})"
+  },
+  "unknown_product": "Unknown Product",
+  "unknown_warehouse": "Unknown Warehouse",
+
 
   "pos_title": "Point of Sale",
   "search_products_placeholder": "Search products by name or SKU...",
@@ -80,5 +102,26 @@
   "select_product": "Select product...",
   "placeholder_qty": "Qty",
   "remove_btn": "Remove",
-  "confirm_transfer_message": "Are you sure you want to complete this transfer? This action cannot be undone."
+  "confirm_transfer_message": "Are you sure you want to complete this transfer? This action cannot be undone.",
+
+  "product": "Product",
+  "warehouse-receiving": "Warehouse (Receiving)",
+  "quantity-received": "Quantity Received",
+  "lot-number": "Batch/Lot Number (Optional)",
+  "expiry-date": "Expiry Date (Optional)",
+  "purchase-cost": "Total Purchase Cost (Optional)",
+  "notes": "Notes (e.g., Supplier, Invoice #)",
+
+  "product-name-en": "Product Name (EN)",
+  "product-name-kh": "Product Name (KH)",
+  "category": "Category",
+  "selling-price": "Selling Price (THB)",
+  "purchase-price": "Purchase Price (THB)",
+  "reorder-point": "Reorder Point",
+  "description": "Description",
+  "add_new_product": "Add New Product",
+  "edit_product": "Edit",
+  "delete_product": "Delete",
+
+  "purchase_in": "Purchase In Stock"
 }

@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. STATE & API CONFIG ---
     let productCache = [];
     let currentFilter = 'All';
-    const API_URL = 'https://sokhaptaesterk-backend.onrender.com/api';
+    const API_URL = 'http://localhost:10000/api';
 
     // --- 3. CORE API FUNCTION ---
     async function fetchAndInitialize() {
@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createProductCard(product) {
         const card = cardTemplate.content.cloneNode(true);
+        const cardLink = card.querySelector('.product-card'); // Get the <a> tag
+        cardLink.href = `product.html?id=${product.id}`;
         const stockStatusEl = card.querySelector('.stock-status');
 
         // --- THIS IS THE KEY FIX ---
