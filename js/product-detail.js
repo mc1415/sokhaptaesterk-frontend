@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const detailContainer = document.getElementById('product-detail-container');
     const detailTemplate = document.getElementById('product-detail-template');
-    const API_URL = 'http://localhost:10000/api';
+    const API_URL = 'https://sokhaptaesterk-backend.onrender.com/api';
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
 
