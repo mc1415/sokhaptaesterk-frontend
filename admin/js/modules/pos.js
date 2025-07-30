@@ -532,7 +532,7 @@ function toggleButtonLoading(button, isLoading, originalText) {
     printReceiptBtn.addEventListener('click', () => {
         if (!lastCompletedSale) return;
         localStorage.setItem('currentReceiptData', JSON.stringify(lastCompletedSale));
-        window.open('receipt-80mm.html', '_blank');
+        printReceiptViaPrintNode(lastCompletedSale);
     });
 
     // Close modal if user clicks outside of it
@@ -595,8 +595,8 @@ function toggleButtonLoading(button, isLoading, originalText) {
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
     
     async function printReceiptViaPrintNode(saleData) {
-        const apiKey = "YOUR_PRINTNODE_API_KEY"; // Replace with your API key
-        const printerId = YOUR_PRINTER_ID; // Replace with your printer ID
+        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk"; // Replace with your API key
+        const printerId = 74589060; // Replace with your printer ID
     
         // Step 1: Create iframe and load receipt
         const iframe = document.createElement('iframe');
