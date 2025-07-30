@@ -593,6 +593,62 @@ function toggleButtonLoading(button, isLoading, originalText) {
 
     resizer.addEventListener('mousedown', onMouseDown);
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
+    
+    async function printReceiptViaPrintNode(saleData) {
+        const apiKey = "YOUR_PRINTNODE_API_KEY"; // Replace with your API key
+        const printerId = YOUR_PRINTER_ID; // Replace with your printer ID
+    
+        // Step 1: Create iframe and load receipt
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'receipt-80mm.html';
+        document.body.appendChild(iframe);
+    
+        iframe.onload = async () => {
+            // Inject sale data into localStorage so receipt-80mm.js can use it
+            localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
+    
+            // Wait briefly to let the receipt finish rendering
+            await new Promise(r => setTimeout(r, 1000));
+    
+            const receiptContent = iframe.contentDocument.body;
+    
+            const opt = {
+                margin: 0,
+                filename: 'receipt.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: [80, 100], orientation: 'portrait' }
+            };
+    
+            html2pdf().from(receiptContent).outputPdf('datauristring').then(async (pdfBase64Uri) => {
+                const base64Data = pdfBase64Uri.split(',')[1];
+    
+                await fetch("https://api.printnode.com/printjobs", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Basic " + btoa(apiKey + ":"),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        printerId: printerId,
+                        title: "POS Receipt",
+                        contentType: "pdf_base64",
+                        content: base64Data,
+                        source: "Custom POS System"
+                    })
+                }).then(res => res.json()).then(data => {
+                    console.log("Print success:", data);
+                    alert("Receipt sent to printer!");
+                }).catch(err => {
+                    console.error("Print error:", err);
+                    alert("Error printing receipt.");
+                });
+    
+                document.body.removeChild(iframe);
+            });
+        };
+    }
 
     // --- 7. INITIAL DATA LOAD ---
     fetchAndRenderInitialData();
