@@ -621,29 +621,16 @@ function toggleButtonLoading(button, isLoading, originalText) {
                 jsPDF: { unit: 'mm', format: [80, 100], orientation: 'portrait' }
             };
     
-            html2pdf().from(receiptContent).outputPdf('datauristring').then(async (pdfBase64Uri) => {
-                const base64Data = pdfBase64Uri.split(',')[1];
-    
-                await fetch("https://api.printnode.com/printjobs", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "Basic " + btoa(apiKey + ":"),
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        printerId: printerId,
-                        title: "POS Receipt",
-                        contentType: "pdf_base64",
-                        content: base64Data,
-                        source: "Custom POS System"
-                    })
-                }).then(res => res.json()).then(data => {
-                    console.log("Print success:", data);
-                    alert("Receipt sent to printer!");
-                }).catch(err => {
-                    console.error("Print error:", err);
-                    alert("Error printing receipt.");
-                });
+            html2pdf().from(receiptContent).set({
+                margin: 0,
+                filename: 'test-receipt-80mm.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' }
+            }).save().then(() => {
+                document.body.removeChild(iframe);
+            });
+
     
                 document.body.removeChild(iframe);
             });
