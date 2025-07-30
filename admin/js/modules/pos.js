@@ -630,10 +630,6 @@ function toggleButtonLoading(button, isLoading, originalText) {
             }).save().then(() => {
                 document.body.removeChild(iframe);
             });
-
-    
-                document.body.removeChild(iframe);
-            });
         };
     }
 
