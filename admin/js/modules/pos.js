@@ -595,45 +595,50 @@ function toggleButtonLoading(button, isLoading, originalText) {
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
     
     async function printReceiptViaPrintNode(saleData) {
-        // Add a status indicator for the user
+        // --- SECURITY WARNING ---
+        // The API key and Printer ID are exposed here.
+        // This is not recommended for a production environment.
+        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
+        const printerId = 74589060; // Your XP-80C Printer ID
+    
         const printBtn = document.getElementById('print-receipt-btn');
         toggleButtonLoading(printBtn, true, 'Print Small Receipt (80mm)');
     
         const iframe = document.createElement('iframe');
-        // Hide the iframe completely
+        // Hide the iframe completely so the user never sees it
         iframe.style.position = 'absolute';
         iframe.style.left = '-9999px';
         iframe.style.width = '80mm'; // Set the crucial width for rendering
         iframe.style.border = 'none';
-    
+        
         try {
-            // This promise wrapper makes the async/await flow cleaner
+            // Step 1: Generate the PDF with a dynamic height and get its Base64 data.
             const base64Content = await new Promise((resolve, reject) => {
                 iframe.onload = async () => {
                     try {
-                        // Inject data into the iframe's localStorage so receipt-80mm.js can use it
+                        // Inject the sale data into the iframe's localStorage
                         iframe.contentWindow.localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
                         
-                        // The receipt script needs to run. Give it a moment to render the data.
+                        // Give the iframe's script time to render the receipt content
                         await new Promise(r => setTimeout(r, 500)); 
     
-                        // 1. MEASURE the actual height of the fully rendered receipt
+                        // a. Measure the actual height of the fully rendered receipt
                         const receiptBody = iframe.contentWindow.document.body;
                         const contentHeightPx = receiptBody.scrollHeight;
                         const contentWidthPx = receiptBody.scrollWidth;
     
-                        // 2. CONVERT height from pixels to millimeters (1mm ≈ 3.78px at 96 DPI)
+                        // b. Convert height from pixels to millimeters (1mm ≈ 3.78px at 96 DPI)
                         const contentHeightMm = contentHeightPx / 3.7795296;
     
-                        // 3. CONFIGURE html2pdf with the DYNAMIC height
+                        // c. Configure html2pdf with the DYNAMIC height
                         const opt = {
-                            margin: [1, 0, 1, 0], // Small top/bottom margin for thermal printers
+                            margin: [1, 0, 1, 0], // Small top/bottom margin
                             filename: `receipt-${saleData.id}.pdf`,
                             image: { type: 'jpeg', quality: 1.0 },
                             html2canvas: { 
-                                scale: 2, // Higher scale = better text quality
+                                scale: 2, // Higher scale = better text clarity
                                 useCORS: true,
-                                width: contentWidthPx, // Use measured width
+                                width: contentWidthPx,
                             },
                             jsPDF: { 
                                 unit: 'mm', 
@@ -642,10 +647,10 @@ function toggleButtonLoading(button, isLoading, originalText) {
                             }
                         };
     
-                        // 4. GENERATE the PDF and get its Base64 data string
+                        // d. Generate the PDF and get its Base64 data string
                         const dataUri = await html2pdf().from(receiptBody).set(opt).output('datauristring');
                         
-                        // 5. EXTRACT the pure Base64 content for the API
+                        // e. Extract the pure Base64 content (the part after the comma)
                         const base64 = dataUri.split(',')[1];
                         resolve(base64);
     
@@ -654,28 +659,42 @@ function toggleButtonLoading(button, isLoading, originalText) {
                     }
                 };
     
-                // Set the source to start the loading process
+                // This starts the loading process
                 iframe.src = 'receipt-80mm.html';
                 document.body.appendChild(iframe);
             });
     
-            // --- SECURE API CALL ---
-            // Instead of calling PrintNode directly, we invoke our secure Supabase Edge Function
-            const { data, error } = await supabase.functions.invoke('printnode-proxy', {
-                body: { base64Content: base64Content }
+            // Step 2: Send the generated Base64 PDF to the PrintNode API
+            const response = await fetch("https://api.printnode.com/printjobs", {
+                method: "POST",
+                headers: {
+                    // Use btoa() to create the Basic auth header
+                    "Authorization": "Basic " + btoa(apiKey + ":"),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    printerId: printerId,
+                    title: `POS Receipt #${saleData.id}`,
+                    contentType: "pdf_base64",
+                    content: base64Content, // The PDF data we generated
+                    source: "Sokha POS System"
+                })
             });
     
-            if (error) throw error;
-            if (data.error) throw new Error(data.error);
+            const responseData = await response.json();
+            if (!response.ok) {
+                // If PrintNode returns an error, show it
+                throw new Error(responseData.message || 'PrintNode API request failed.');
+            }
     
-            console.log("Print job sent successfully:", data);
+            console.log("Print job sent successfully:", responseData);
             alert('Receipt has been sent to the printer.');
     
         } catch (error) {
             console.error('Failed to generate or print receipt:', error);
             alert(`Printing failed: ${error.message}`);
         } finally {
-            // 6. CLEANUP: Always remove the iframe and reset the button
+            // Step 3: Clean up by removing the iframe and resetting the button
             if (iframe) {
                 document.body.removeChild(iframe);
             }
