@@ -595,42 +595,92 @@ function toggleButtonLoading(button, isLoading, originalText) {
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
     
     async function printReceiptViaPrintNode(saleData) {
-        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk"; // Replace with your API key
-        const printerId = 74589060; // Replace with your printer ID
+        // Add a status indicator for the user
+        const printBtn = document.getElementById('print-receipt-btn');
+        toggleButtonLoading(printBtn, true, 'Print Small Receipt (80mm)');
     
-        // Step 1: Create iframe and load receipt
         const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = 'receipt-80mm.html';
-        document.body.appendChild(iframe);
+        // Hide the iframe completely
+        iframe.style.position = 'absolute';
+        iframe.style.left = '-9999px';
+        iframe.style.width = '80mm'; // Set the crucial width for rendering
+        iframe.style.border = 'none';
     
-        iframe.onload = async () => {
-            // Inject sale data into localStorage so receipt-80mm.js can use it
-            localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
+        try {
+            // This promise wrapper makes the async/await flow cleaner
+            const base64Content = await new Promise((resolve, reject) => {
+                iframe.onload = async () => {
+                    try {
+                        // Inject data into the iframe's localStorage so receipt-80mm.js can use it
+                        iframe.contentWindow.localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
+                        
+                        // The receipt script needs to run. Give it a moment to render the data.
+                        await new Promise(r => setTimeout(r, 500)); 
     
-            // Wait briefly to let the receipt finish rendering
-            await new Promise(r => setTimeout(r, 1000));
+                        // 1. MEASURE the actual height of the fully rendered receipt
+                        const receiptBody = iframe.contentWindow.document.body;
+                        const contentHeightPx = receiptBody.scrollHeight;
+                        const contentWidthPx = receiptBody.scrollWidth;
     
-            const receiptContent = iframe.contentDocument.body;
+                        // 2. CONVERT height from pixels to millimeters (1mm ≈ 3.78px at 96 DPI)
+                        const contentHeightMm = contentHeightPx / 3.7795296;
     
-            const opt = {
-                margin: 0,
-                filename: 'receipt.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: [80, 100], orientation: 'portrait' }
-            };
+                        // 3. CONFIGURE html2pdf with the DYNAMIC height
+                        const opt = {
+                            margin: [1, 0, 1, 0], // Small top/bottom margin for thermal printers
+                            filename: `receipt-${saleData.id}.pdf`,
+                            image: { type: 'jpeg', quality: 1.0 },
+                            html2canvas: { 
+                                scale: 2, // Higher scale = better text quality
+                                useCORS: true,
+                                width: contentWidthPx, // Use measured width
+                            },
+                            jsPDF: { 
+                                unit: 'mm', 
+                                format: [80, contentHeightMm], // DYNAMIC FORMAT [width, height]
+                                orientation: 'portrait' 
+                            }
+                        };
     
-            html2pdf().from(receiptContent).set({
-                margin: 0,
-                filename: 'test-receipt-80mm.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 1 },
-                jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' }
-            }).save().then(() => {
-                document.body.removeChild(iframe);
+                        // 4. GENERATE the PDF and get its Base64 data string
+                        const dataUri = await html2pdf().from(receiptBody).set(opt).output('datauristring');
+                        
+                        // 5. EXTRACT the pure Base64 content for the API
+                        const base64 = dataUri.split(',')[1];
+                        resolve(base64);
+    
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+    
+                // Set the source to start the loading process
+                iframe.src = 'receipt-80mm.html';
+                document.body.appendChild(iframe);
             });
-        };
+    
+            // --- SECURE API CALL ---
+            // Instead of calling PrintNode directly, we invoke our secure Supabase Edge Function
+            const { data, error } = await supabase.functions.invoke('printnode-proxy', {
+                body: { base64Content: base64Content }
+            });
+    
+            if (error) throw error;
+            if (data.error) throw new Error(data.error);
+    
+            console.log("Print job sent successfully:", data);
+            alert('Receipt has been sent to the printer.');
+    
+        } catch (error) {
+            console.error('Failed to generate or print receipt:', error);
+            alert(`Printing failed: ${error.message}`);
+        } finally {
+            // 6. CLEANUP: Always remove the iframe and reset the button
+            if (iframe) {
+                document.body.removeChild(iframe);
+            }
+            toggleButtonLoading(printBtn, false, 'Print Small Receipt (80mm)');
+        }
     }
 
     // --- 7. INITIAL DATA LOAD ---
