@@ -432,6 +432,28 @@ async function completeSale(paymentMethodOverride = null) {
     }
 }
 
+async function printWithPrintNode(base64Content) {
+    const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
+    const printerId = 74589060; // Replace with your printer ID
+
+    const response = await fetch("https://api.printnode.com/printjobs", {
+        method: "POST",
+        headers: {
+            "Authorization": "Basic " + btoa(apiKey + ":"),
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            printerId: printerId,
+            title: "POS Receipt",
+            contentType: "pdf_base64",
+            content: base64Content,
+            source: "My POS System"
+        })
+    });
+
+    const data = await response.json();
+    console.log("Print job sent:", data);
+}
 
 // This event listener needs to be updated to cancel the timer if the user closes the modal
 document.querySelector('#qr-code-modal .close-btn').addEventListener('click', () => {
