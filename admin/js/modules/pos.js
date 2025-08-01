@@ -603,7 +603,11 @@ function toggleButtonLoading(button, isLoading, originalText) {
     
         const printBtn = document.getElementById('print-receipt-btn');
         toggleButtonLoading(printBtn, true, 'Print Small Receipt (80mm)');
-    
+
+        // Make the receipt data available before the iframe loads so the page
+        // inside the iframe can read it during its own DOMContentLoaded event.
+        localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
+
         const iframe = document.createElement('iframe');
         // Hide the iframe completely so the user never sees it
         iframe.style.position = 'absolute';
@@ -616,39 +620,43 @@ function toggleButtonLoading(button, isLoading, originalText) {
             const base64Content = await new Promise((resolve, reject) => {
                 iframe.onload = async () => {
                     try {
-                        // Inject the sale data into the iframe's localStorage
-                        iframe.contentWindow.localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
-                        
+                        // Prevent the page inside the iframe from opening its own print dialog
+                        iframe.contentWindow.print = () => {};
+
                         // Give the iframe's script time to render the receipt content
-                        await new Promise(r => setTimeout(r, 500)); 
-    
-                        // a. Measure the actual height of the fully rendered receipt
+                        await new Promise(r => setTimeout(r, 500));
+
                         const receiptBody = iframe.contentWindow.document.body;
+
+                        // Measure the actual rendered height so the PDF is a
+                        // single page with no extra blanks or cuts
                         const contentHeightPx = receiptBody.scrollHeight;
                         const contentWidthPx = receiptBody.scrollWidth;
-    
-                        // b. Convert height from pixels to millimeters (1mm ≈ 3.78px at 96 DPI)
-                        const contentHeightMm = contentHeightPx / 3.7795296;
-    
-                        // c. Configure html2pdf with the DYNAMIC height
+                        const contentHeightMm = contentHeightPx / 3.7795296; // px to mm
+
                         const opt = {
-                            margin: [1, 0, 1, 0], // Small top/bottom margin
+                            margin: 0,
                             filename: `receipt-${saleData.id}.pdf`,
-                            image: { type: 'jpeg', quality: 1.0 },
-                            html2canvas: { 
-                                scale: 2, // Higher scale = better text clarity
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: {
+                                scale: 3,
+                                dpi: 300,
                                 useCORS: true,
-                                width: contentWidthPx,
+                                width: contentWidthPx
                             },
-                            jsPDF: { 
-                                unit: 'mm', 
-                                format: [80, contentHeightMm], // DYNAMIC FORMAT [width, height]
-                                orientation: 'portrait' 
-                            }
+                            jsPDF: {
+                                unit: 'mm',
+                                format: [80, contentHeightMm],
+                                orientation: 'portrait'
+                            },
+                            pagebreak: { mode: ['avoid'] }
                         };
-    
-                        // d. Generate the PDF and get its Base64 data string
-                        const dataUri = await html2pdf().from(receiptBody).set(opt).output('datauristring');
+
+                        // Generate the PDF and get its Base64 data string
+                        const dataUri = await html2pdf()
+                            .from(receiptBody)
+                            .set(opt)
+                            .outputPdf('datauristring');
                         
                         // e. Extract the pure Base64 content (the part after the comma)
                         const base64 = dataUri.split(',')[1];
@@ -660,8 +668,8 @@ function toggleButtonLoading(button, isLoading, originalText) {
                 };
     
                 // This starts the loading process
-                iframe.src = 'receipt-80mm.html';
                 document.body.appendChild(iframe);
+                iframe.src = 'receipt-80mm.html';
             });
     
             // Step 2: Send the generated Base64 PDF to the PrintNode API
