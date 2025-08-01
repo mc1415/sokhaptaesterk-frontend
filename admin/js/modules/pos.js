@@ -637,9 +637,11 @@ function toggleButtonLoading(button, isLoading, originalText) {
                         const opt = {
                             margin: 0,
                             filename: `receipt-${saleData.id}.pdf`,
-                            image: { type: 'jpeg', quality: 0.98 },
+
+                            image: { type: 'jpeg', quality: 1.0 },
                             html2canvas: {
-                                scale: 3,
+                                scale: 3, // Better text clarity for thermal printer
+
                                 dpi: 300,
                                 useCORS: true,
                                 width: contentWidthPx
