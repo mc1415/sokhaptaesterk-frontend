@@ -603,7 +603,11 @@ function toggleButtonLoading(button, isLoading, originalText) {
     
         const printBtn = document.getElementById('print-receipt-btn');
         toggleButtonLoading(printBtn, true, 'Print Small Receipt (80mm)');
-    
+
+        // Make the receipt data available before the iframe loads so the page
+        // inside the iframe can read it during its own DOMContentLoaded event.
+        localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
+
         const iframe = document.createElement('iframe');
         // Hide the iframe completely so the user never sees it
         iframe.style.position = 'absolute';
@@ -616,11 +620,11 @@ function toggleButtonLoading(button, isLoading, originalText) {
             const base64Content = await new Promise((resolve, reject) => {
                 iframe.onload = async () => {
                     try {
-                        // Inject the sale data into the iframe's localStorage
-                        iframe.contentWindow.localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
-                        
+                        // Prevent the page inside the iframe from opening its own print dialog
+                        iframe.contentWindow.print = () => {};
+
                         // Give the iframe's script time to render the receipt content
-                        await new Promise(r => setTimeout(r, 500)); 
+                        await new Promise(r => setTimeout(r, 500));
     
                         // a. Measure the actual height of the fully rendered receipt
                         const receiptBody = iframe.contentWindow.document.body;
@@ -660,8 +664,8 @@ function toggleButtonLoading(button, isLoading, originalText) {
                 };
     
                 // This starts the loading process
-                iframe.src = 'receipt-80mm.html';
                 document.body.appendChild(iframe);
+                iframe.src = 'receipt-80mm.html';
             });
     
             // Step 2: Send the generated Base64 PDF to the PrintNode API
