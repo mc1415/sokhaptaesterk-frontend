@@ -628,24 +628,25 @@ function toggleButtonLoading(button, isLoading, originalText) {
 
                         const receiptBody = iframe.contentWindow.document.body;
 
-                        // Calculate PDF height based on number of items
-                        const itemsCount = saleData.sale_items.length;
-                        const baseHeight = 80; // enough for header & totals
-                        const perItemHeight = 10; // each item approx 10mm tall
-                        const finalHeight = baseHeight + (itemsCount * perItemHeight);
+                        // Measure the actual rendered height so the PDF is a
+                        // single page with no extra blanks or cuts
+                        const contentHeightPx = receiptBody.scrollHeight;
+                        const contentWidthPx = receiptBody.scrollWidth;
+                        const contentHeightMm = contentHeightPx / 3.7795296; // px to mm
 
                         const opt = {
                             margin: 0,
                             filename: `receipt-${saleData.id}.pdf`,
                             image: { type: 'jpeg', quality: 0.98 },
                             html2canvas: {
-                                scale: 2,
-                                windowWidth: 800,
-                                useCORS: true
+                                scale: 3,
+                                dpi: 300,
+                                useCORS: true,
+                                width: contentWidthPx
                             },
                             jsPDF: {
                                 unit: 'mm',
-                                format: [80, finalHeight],
+                                format: [80, contentHeightMm],
                                 orientation: 'portrait'
                             },
                             pagebreak: { mode: ['avoid'] }
