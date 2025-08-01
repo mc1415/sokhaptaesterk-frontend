@@ -625,39 +625,40 @@ function toggleButtonLoading(button, isLoading, originalText) {
 
                         // Give the iframe's script time to render the receipt content
                         await new Promise(r => setTimeout(r, 500));
-    
-                        // a. Measure the actual height of the fully rendered receipt
+
                         const receiptBody = iframe.contentWindow.document.body;
+
+                        // Measure the actual rendered height so the PDF is a
+                        // single page with no extra blanks or cuts
                         const contentHeightPx = receiptBody.scrollHeight;
                         const contentWidthPx = receiptBody.scrollWidth;
-    
-                        // b. Convert height from pixels to millimeters (1mm ≈ 3.78px at 96 DPI)
-                        const contentHeightMm = contentHeightPx / 3.7795296;
-    
-                        // c. Configure html2pdf with the DYNAMIC height
+                        const contentHeightMm = contentHeightPx / 3.7795296; // px to mm
+
                         const opt = {
-                            margin: [1, 0, 1, 0], // Small top/bottom margin
+                            margin: 0,
                             filename: `receipt-${saleData.id}.pdf`,
+
                             image: { type: 'jpeg', quality: 1.0 },
                             html2canvas: {
                                 scale: 3, // Better text clarity for thermal printer
+
                                 dpi: 300,
                                 useCORS: true,
-                                width: contentWidthPx,
+                                width: contentWidthPx
                             },
-                            jsPDF: { 
-                                unit: 'mm', 
-                                format: [80, contentHeightMm], // DYNAMIC FORMAT [width, height]
-                                orientation: 'portrait' 
-                            }
+                            jsPDF: {
+                                unit: 'mm',
+                                format: [80, contentHeightMm],
+                                orientation: 'portrait'
+                            },
+                            pagebreak: { mode: ['avoid'] }
                         };
-    
-                        // d. Generate the PDF and get its Base64 data string
+
+                        // Generate the PDF and get its Base64 data string
                         const dataUri = await html2pdf()
-                            .set({ pagebreak: { mode: 'avoid-all' } })
                             .from(receiptBody)
                             .set(opt)
-                            .output('datauristring');
+                            .outputPdf('datauristring');
                         
                         // e. Extract the pure Base64 content (the part after the comma)
                         const base64 = dataUri.split(',')[1];
