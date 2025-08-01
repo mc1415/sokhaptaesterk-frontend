@@ -639,8 +639,9 @@ function toggleButtonLoading(button, isLoading, originalText) {
                             margin: [1, 0, 1, 0], // Small top/bottom margin
                             filename: `receipt-${saleData.id}.pdf`,
                             image: { type: 'jpeg', quality: 1.0 },
-                            html2canvas: { 
-                                scale: 2, // Higher scale = better text clarity
+                            html2canvas: {
+                                scale: 3, // Better text clarity for thermal printer
+                                dpi: 300,
                                 useCORS: true,
                                 width: contentWidthPx,
                             },
@@ -652,7 +653,11 @@ function toggleButtonLoading(button, isLoading, originalText) {
                         };
     
                         // d. Generate the PDF and get its Base64 data string
-                        const dataUri = await html2pdf().from(receiptBody).set(opt).output('datauristring');
+                        const dataUri = await html2pdf()
+                            .set({ pagebreak: { mode: 'avoid-all' } })
+                            .from(receiptBody)
+                            .set(opt)
+                            .output('datauristring');
                         
                         // e. Extract the pure Base64 content (the part after the comma)
                         const base64 = dataUri.split(',')[1];
