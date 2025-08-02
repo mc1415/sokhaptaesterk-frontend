@@ -114,84 +114,95 @@
         });
     </script> -->
     <script>
-        document.getElementById('printnode-btn').addEventListener('click', async () => {
-          const receipt = document.querySelector('.receipt');
-          
-          // Store the original margin style to restore it later
-          const originalMargin = receipt.style.margin;
-        
-          try {
-            // --- TEMPORARY STYLE FOR CAPTURE ---
-            // Force the receipt to the top-left corner to eliminate any gap.
-            receipt.style.margin = '0'; 
-        
-            const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
-            const printerId = 74589060;
-        
-            // The rest of your logic remains the same
-            receipt.style.width = '160mm'; // Oversize for crisp capture
-        
-            const canvas = await html2canvas(receipt, { 
-              scale: 3,
-              useCORS: true,
-              scrollX: 0,
-              scrollY: -window.scrollY, // More robust scroll handling
-              windowWidth: receipt.scrollWidth,
-              windowHeight: receipt.scrollHeight
-            });
-        
-            receipt.style.width = ''; // Reset width
-        
-            const pxToMm = px => px / 3.78;
-            const receiptHeightMm = pxToMm(canvas.height) / 2;
-        
-            const opt = {
-              margin: 0,
-              filename: 'receipt.pdf',
-              image: { type: 'jpeg', quality: 1.0 },
-              html2canvas: { scale: 3, useCORS: true },
-              jsPDF: { 
+document.getElementById('printnode-btn').addEventListener('click', async () => {
+    // 1. Find the original receipt element
+    const originalReceipt = document.querySelector('.receipt');
+    if (!originalReceipt) {
+        console.error("Could not find the .receipt element.");
+        alert("Error: .receipt element not found.");
+        return;
+    }
+
+    // 2. Create a clone to avoid affecting the original element's display
+    const receiptClone = originalReceipt.cloneNode(true);
+    
+    // Create a temporary container to hold the clone in an isolated environment
+    const captureContainer = document.createElement('div');
+    
+    // Style the container to be absolutely positioned at the top-left and invisible.
+    // This isolates it from the document's flow, scroll position, and other styles.
+    Object.assign(captureContainer.style, {
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        zIndex: '-1',     // Hide it behind other content
+        opacity: '0',     // Make it fully transparent
+        width: '80mm'     // Set the final print width for accurate rendering
+    });
+
+    // Add the clone to the container and the container to the page
+    captureContainer.appendChild(receiptClone);
+    document.body.appendChild(captureContainer);
+    
+    try {
+        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
+        const printerId = 74589060;
+
+        // 3. Configure html2pdf to capture the ISOLATED CLONE
+        const opt = {
+            // Set PDF margin to zero. This is crucial.
+            margin: 0,
+            filename: 'receipt.pdf',
+            image: { type: 'jpeg', quality: 1.0 },
+            // Pass options directly to the internal html2canvas instance
+            html2canvas: {
+                scale: 3,       // Higher scale for better quality
+                useCORS: true,  // For images from other domains
+                scrollY: 0,     // We don't need scrollY because our clone is at the top
+            },
+            // Configure the PDF document itself
+            jsPDF: {
                 unit: 'mm',
-                format: [80, receiptHeightMm],
+                // Set the width to 80mm and let height be calculated automatically
+                format: [80, 'auto'],
                 orientation: 'portrait'
-              },
-              pagebreak: { mode: ['avoid'] }
-            };
+            }
+        };
+
+        // 4. Generate the PDF as a Base64 string directly from the clone
+        const dataUri = await html2pdf().from(receiptClone).set(opt).outputPdf('datauristring');
+        const base64PDF = dataUri.split(',')[1];
         
-            const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
-            const base64PDF = dataUri.split(',')[1];
-        
-            const response = await fetch("https://api.printnode.com/printjobs", {
-              method: "POST",
-              headers: {
+        // 5. Send to PrintNode
+        const response = await fetch("https://api.printnode.com/printjobs", {
+            method: "POST",
+            headers: {
                 "Authorization": "Basic " + btoa(apiKey + ":"),
                 "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
+            },
+            body: JSON.stringify({
                 printerId: printerId,
                 title: "Receipt",
                 contentType: "pdf_base64",
                 content: base64PDF,
                 source: "POS System"
-              })
-            });
-        
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || "PrintNode request failed");
-        
-            alert("✅ Receipt sent to printer!");
-        
-          } catch (err) {
-            console.error("❌ Printing error:", err);
-            alert("❌ " + err.message);
-          } finally {
-            // --- RESTORE ORIGINAL STYLE ---
-            // This block runs whether the try block succeeded or failed,
-            // ensuring the on-screen receipt goes back to being centered.
-            receipt.style.margin = originalMargin;
-          }
+            })
         });
-        </script>
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "PrintNode request failed");
+
+        alert("✅ Receipt sent to printer!");
+
+    } catch (err) {
+        console.error("❌ Printing error:", err);
+        alert("❌ " + err.message);
+    } finally {
+        // 6. IMPORTANT: Always remove the temporary container from the DOM
+        document.body.removeChild(captureContainer);
+    }
+});
+</script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
