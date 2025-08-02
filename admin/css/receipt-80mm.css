@@ -15,11 +15,11 @@ html, body {
     padding: 0 !important;
     background: white;
 }
-
 .receipt {
     margin: 0 auto;
-    padding: 0;
+    padding: 10px; /* Let's add some padding for better looks */
     width: 80mm;
+    box-sizing: border-box; /* Add this line */
 }
 
 .receipt img {
