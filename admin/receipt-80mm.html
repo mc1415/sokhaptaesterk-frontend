@@ -67,7 +67,7 @@
     <script src="js/i18n.js"></script>
     <script src="js/receipt-80mm.js"></script>
     <script src="js/receipt-printer-encoder.umd.js"></script>
-    <script>
+    <!--<script>
         document.getElementById('printnode-btn').addEventListener('click', async () => {
           try {
             const receipt = document.querySelector('.receipt');
@@ -110,6 +110,76 @@
           } catch (err) {
             console.error("❌ PDF error:", err);
             alert("❌ PDF generation failed: " + err.message);
+          }
+        });
+    </script> -->
+    <script>
+        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";  // ✅ your PrintNode API key
+        const printerId = 74589060;  // ✅ your PrintNode printer ID
+        
+        document.getElementById('printnode-btn').addEventListener('click', async () => {
+          try {
+            const receipt = document.querySelector('.receipt');
+        
+            // ✅ Make sure receipt expands fully for capture
+            receipt.style.height = 'auto';
+            receipt.style.overflow = 'visible';
+        
+            // ✅ STEP 1: Render receipt into a high-res canvas
+            const canvas = await html2canvas(receipt, { 
+              scale: 3, 
+              useCORS: true, 
+              windowHeight: document.body.scrollHeight
+            });
+        
+            // ✅ STEP 2: Calculate exact height in mm
+            const pxToMm = px => px / 3.78;
+            const canvasHeightMm = pxToMm(canvas.height);
+            console.log(`📝 PDF height: ${canvasHeightMm}mm`);
+        
+            // ✅ STEP 3: Generate PDF but don’t auto-save
+            const opt = {
+              margin: 0,
+              filename: `receipt.pdf`,   // not downloaded, just named
+              image: { type: 'jpeg', quality: 1.0 },
+              html2canvas: { scale: 3, useCORS: true },
+              jsPDF: {
+                unit: 'mm',
+                format: [80, canvasHeightMm],
+                orientation: 'portrait'
+              },
+              pagebreak: { mode: ['avoid'] }
+            };
+        
+            // ✅ STEP 4: Output PDF as Base64 string (no download)
+            const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
+            const base64PDF = dataUri.split(',')[1];  // strip "data:application/pdf;base64,"
+        
+            // ✅ STEP 5: Send PDF to PrintNode
+            const response = await fetch("https://api.printnode.com/printjobs", {
+              method: "POST",
+              headers: {
+                "Authorization": "Basic " + btoa(apiKey + ":"),
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                printerId: printerId,
+                title: "Receipt",
+                contentType: "pdf_base64",
+                content: base64PDF,
+                source: "POS System"
+              })
+            });
+        
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "PrintNode request failed");
+        
+            alert("✅ PDF sent to PrintNode printer!");
+            console.log("📤 PrintNode response:", result);
+        
+          } catch (err) {
+            console.error("❌ Printing error:", err);
+            alert("❌ Printing failed: " + err.message);
           }
         });
     </script>
