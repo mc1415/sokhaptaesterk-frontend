@@ -634,6 +634,7 @@ function toggleButtonLoading(button, isLoading, originalText) {
                         /* ✅ html2pdf options */
                         const opt = {
                             margin: 0,
+                            pagebreak: { mode: ['avoid'] },
                             filename: `TEST-receipt-${saleData.id}.pdf`,
                             image: { type: 'jpeg', quality: 1.0 },
                             html2canvas: {
@@ -644,9 +645,9 @@ function toggleButtonLoading(button, isLoading, originalText) {
                                 scrollY: 0
                             },
                             jsPDF: {
-                                unit: 'mm',
-                                format: 'a4',  // ✅ TEMP for debug capture
-                                orientation: 'portrait'
+                               unit: 'mm',
+                               format: [80, contentHeightMm],  // ✅ ONE continuous page
+                               orientation: 'portrait'
                             },
                             pagebreak: { mode: ['avoid'] }
                         };
