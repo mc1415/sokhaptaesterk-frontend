@@ -66,82 +66,102 @@
     <script src="js/currencyHelper.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/receipt-80mm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/escpos-encoder/dist/escpos-encoder.umd.js"></script>
+    <script src="https://unpkg.com/receipt-printer-encoder/dist/receipt-printer-encoder.umd.js"></script>
     <script>
-        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";    // 🔄 Replace with your key
-        const printerId = 74589060;          // 🔄 Replace with your printer ID
+        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";  // Replace with your key
+        const printerId = 74589060;  // Replace with your printer ID
         
         document.getElementById('printnode-btn').addEventListener('click', async () => {
-            try {
-                // ✅ Grab sale data stored from POS
-                const saleData = JSON.parse(localStorage.getItem('currentReceiptData'));
-                if (!saleData) {
-                    alert("❌ No receipt data found.");
-                    return;
-                }
-        
-                // ✅ Build ESC/POS commands
-                const encoder = new EscPosEncoder();
-                const result = encoder
-                    .initialize()
-                    .align('center')
-                    .line('សុខាផ្ទះទឹក')   // Shop name in Khmer
-                    .line('Tel: +855 78 659 799')
-                    .newline()
-                    .align('left');
-        
-                // Add items
-                saleData.items.forEach(item => {
-                    const name = item.name.padEnd(12).slice(0,12); // truncate/pad
-                    const qty = String(item.quantity).padEnd(3);
-                    const price = item.price.toFixed(2);
-                    result.line(`${name} ${qty} ${price}`);
-                });
-        
-                // Totals
-                result
-                    .newline()
-                    .line('--------------------------')
-                    .align('right')
-                    .line(`TOTAL: ${saleData.total_amount.toFixed(2)} THB`)
-                    .newline()
-                    .newline()
-                    .align('center')
-                    .line('សូមអរគុណ!')
-                    .newline()
-                    .cut('full');
-        
-                const escposData = result.encode();
-        
-                // ✅ Convert binary ESC/POS data → Base64
-                const base64Content = btoa(String.fromCharCode(...escposData));
-        
-                // ✅ Send to PrintNode as raw_base64
-                const response = await fetch("https://api.printnode.com/printjobs", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "Basic " + btoa(apiKey + ":"),
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        printerId: printerId,
-                        title: "ESC/POS Receipt",
-                        contentType: "raw_base64",
-                        content: base64Content,
-                        source: "POS System"
-                    })
-                });
-        
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.message || "PrintNode failed");
-        
-                alert("✅ ESC/POS receipt sent to printer!");
-            } catch (err) {
-                console.error("❌ Printing error:", err);
-                alert("❌ Error: " + err.message);
+          try {
+            // ✅ Get sale data from POS via localStorage
+            const saleData = JSON.parse(localStorage.getItem('currentReceiptData'));
+            if (!saleData) {
+              alert("❌ No receipt data found.");
+              return;
             }
+        
+            // ✅ Build the ESC/POS receipt
+            const encoder = new ReceiptPrinterEncoder({
+              language: 'esc-pos',      // ESC/POS for XP-80C
+              codepageMapping: 'epson', // Ensures Khmer codepage works
+              codepage: 'auto',         // Automatically pick correct codepage
+              columns: 42,              // 80mm paper ~ 42 chars
+              feedBeforeCut: 4          // Feed extra lines before cutting
+            });
+        
+            encoder
+              .initialize()
+              .align('center')
+              .bold(true)
+              .size(2)                        // double-size text
+              .line('សុខាផ្ទះទឹក')            // Store name in Khmer
+              .size(1)
+              .bold(false)
+              .line('Tel: +855 78 659 799')
+              .newline()
+        
+              // 🔻 Receipt info
+              .align('left')
+              .line(`Receipt No: ${saleData.id || ''}`)
+              .line(`Date: ${new Date().toLocaleString()}`)
+              .line(`Cashier: ${saleData.user?.fullName || 'Unknown'}`)
+              .rule({ style: 'single' });
+        
+            // 🛍 Items
+            saleData.items.forEach(item => {
+              encoder.line(
+                `${item.name.padEnd(20).slice(0,20)} ${String(item.quantity).padStart(2)} x ${item.price.toFixed(2)}`
+              );
+            });
+        
+            // 💵 Totals
+            encoder
+              .rule({ style: 'single' })
+              .align('right')
+              .bold(true)
+              .line(`Subtotal: ${saleData.total_amount.toFixed(2)} THB`)
+              .line(`TOTAL: ${saleData.total_amount.toFixed(2)} THB`)
+              .bold(false)
+              .newline()
+              .align('center')
+              .line('Thank you for your business!')
+              .line('សូមអរគុណ!')
+              .newline()
+              .cut('full');   // ✂️ Full paper cut
+        
+            // ✅ Encode receipt to ESC/POS bytes
+            const escposData = encoder.encode();
+        
+            // ✅ Convert binary data to Base64 for PrintNode
+            const base64Content = btoa(String.fromCharCode(...escposData));
+        
+            // ✅ Send to PrintNode
+            const response = await fetch("https://api.printnode.com/printjobs", {
+              method: "POST",
+              headers: {
+                "Authorization": "Basic " + btoa(apiKey + ":"),
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                printerId: printerId,
+                title: "Receipt",
+                contentType: "raw_base64",
+                content: base64Content,
+                source: "POS System"
+              })
+            });
+        
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "PrintNode failed");
+        
+            alert("✅ Receipt sent to printer!");
+          } catch (err) {
+            console.error("❌ Printing error:", err);
+            alert("❌ Error: " + err.message);
+          }
         });
         </script>
+
 
 </body>
 </html>
