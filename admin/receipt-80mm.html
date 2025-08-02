@@ -113,7 +113,8 @@
           }
         });
     </script> -->
-    <script>
+    <!-- The final, corrected script block -->
+<script>
 document.getElementById('printnode-btn').addEventListener('click', async () => {
     const originalReceipt = document.querySelector('.receipt');
     if (!originalReceipt) {
@@ -125,17 +126,15 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
     const receiptClone = originalReceipt.cloneNode(true);
     const captureContainer = document.createElement('div');
     
-    // --- KEY CHANGE #1 ---
-    // Set the width to the exact pixel width of 80mm paper at 203 DPI.
-    // This ensures the initial render is perfectly sized for the printer.
-    const printerWidthInPx = 640; 
+    // Set the width to the exact physical dimension.
+    // This is the most direct instruction to html2pdf.js for the output size.
     Object.assign(captureContainer.style, {
         position: 'absolute',
         top: '0',
         left: '0',
         zIndex: '-1',
         opacity: '0',
-        width: `${printerWidthInPx}px` // Use calculated pixel width
+        width: '80mm' // Use the physical unit
     });
 
     captureContainer.appendChild(receiptClone);
@@ -150,18 +149,16 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             filename: 'receipt.pdf',
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: {
-                // --- KEY CHANGE #2 ---
-                // We no longer need a high scale factor because we are rendering
-                // at the target resolution already. This improves accuracy.
-                scale: 1, 
+                // Using a higher scale gives a better quality source image
+                // for the PDF, resulting in crisper text.
+                scale: 3, 
                 useCORS: true,
                 scrollY: 0,
             },
             jsPDF: {
                 unit: 'mm',
-                // Define the format based on our known width.
-                // This tells jsPDF to create an 80mm wide document.
-                format: [80, 'auto'], 
+                // CRITICAL: The 'format' property is removed to prevent the crash.
+                // The PDF size will be determined by the source element's width (80mm).
                 orientation: 'portrait'
             }
         };
@@ -176,7 +173,7 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             content: base64PDF,
             source: "POS System",
             options: {
-                "fit_to_page": false // This remains crucial
+                "fit_to_page": false // This is essential for 1:1 printing
             }
         };
         
