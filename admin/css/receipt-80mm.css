@@ -2,11 +2,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700;900&family=Poppins:wght@400;600&family=Moul&display=swap');
 
-body {
+html, body {
     font-family: 'Courier Prime', monospace;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 1rem;
+    background-color: #f4f4f4; /* This only affects screen view */
+    margin: 0 !important;
+    padding: 0 !important;
     color: #000;
 }
 
