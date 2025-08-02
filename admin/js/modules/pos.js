@@ -639,8 +639,12 @@ function toggleButtonLoading(button, isLoading, originalText) {
                 filename: `TEST-receipt-${saleData.id}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 3, dpi: 300, useCORS: true },
-                jsPDF: { unit: 'mm', format: [80, contentHeightMm], orientation: 'portrait' },
-                pagebreak: { mode: ['avoid'] }
+                jsPDF: {
+                    unit: 'mm',
+                    format: [80, contentHeightMm],   // ✅ single custom page
+                    orientation: 'portrait'
+                },
+                pagebreak: { mode: ['avoid', 'css', 'legacy'] }
             };
     
             // Generate & save PDF for testing
