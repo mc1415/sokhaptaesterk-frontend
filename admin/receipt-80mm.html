@@ -121,15 +121,11 @@
         
             const receipt = document.querySelector('.receipt');
 
-            // ✅ STEP 1: Temporarily upscale CSS
-            const originalFontSize = window.getComputedStyle(receipt).fontSize;
-            receipt.style.fontSize = '18px'; // 🔥 Make all text larger
+            // ✅ STEP 1: Temporarily make receipt “oversized”
+            const originalWidth = receipt.style.width;
+            receipt.style.width = '160mm';   // 🔥 capture at double size
         
-            // ✅ If you want to enlarge tables/images too:
-            receipt.querySelectorAll('img').forEach(img => img.style.width = 'auto');
-            receipt.style.zoom = 1.3; // 🔥 CSS zoom enlarges *everything*
-        
-            // ✅ STEP 2: Capture at high-res
+            // ✅ STEP 2: Capture with html2canvas at high scale
             const canvas = await html2canvas(receipt, { 
               scale: 3,
               useCORS: true,
@@ -139,11 +135,10 @@
               windowHeight: receipt.scrollHeight
             });
         
-            // ✅ STEP 3: Reset styles
-            receipt.style.fontSize = originalFontSize;
-            receipt.style.zoom = '';
+            // ✅ STEP 3: Reset receipt width back
+            receipt.style.width = originalWidth || '';
         
-            // ✅ STEP 4: Create PDF using true 80mm width
+            // ✅ STEP 4: Convert to PDF with true 80mm width
             const pxToMm = px => px / 3.78;
             const canvasHeightMm = pxToMm(canvas.height);
         
@@ -154,16 +149,17 @@
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: { 
                 unit: 'mm',
-                format: [80, canvasHeightMm],
+                format: [80, canvasHeightMm / 2],  // 🔥 divide height by 2 since we doubled width
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
+            // ✅ STEP 5: Generate PDF
             const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
             const base64PDF = dataUri.split(',')[1];
         
-            // ✅ STEP 5: Send to PrintNode
+            // ✅ STEP 6: Send to PrintNode
             const response = await fetch("https://api.printnode.com/printjobs", {
               method: "POST",
               headers: {
@@ -182,7 +178,7 @@
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "PrintNode request failed");
         
-            alert("✅ Larger text receipt sent to printer!");
+            alert("✅ Oversized capture sent to printer!");
           } catch (err) {
             console.error("❌ Printing error:", err);
             alert("❌ " + err.message);
