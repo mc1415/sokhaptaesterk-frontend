@@ -72,17 +72,24 @@
           try {
             const receipt = document.querySelector('.receipt');
         
-            // ✅ Debug: check full receipt dimensions
-            const rect = receipt.getBoundingClientRect();
-            console.log("Receipt dimensions:", rect.width, rect.height);
+            // ✅ Force .receipt to expand fully before capture
+            receipt.style.height = 'auto';
+            receipt.style.overflow = 'visible';
         
-            // ✅ Add buffer so nothing gets cut off
+            // ✅ STEP 1: Render receipt to canvas
+            const canvas = await html2canvas(receipt, { 
+              scale: 3, 
+              useCORS: true, 
+              windowHeight: document.body.scrollHeight   // ✅ ensures full content capture
+            });
+        
+            // ✅ STEP 2: Convert canvas height (px → mm)
             const pxToMm = px => px / 3.78;
-            const receiptHeight = pxToMm(receipt.scrollHeight) + 15; // buffer in mm
+            const canvasHeightMm = pxToMm(canvas.height);
         
-            console.log(`📝 Calculated receipt height: ${receiptHeight} mm (with buffer)`);
+            console.log(`📝 Canvas height used for PDF: ${canvasHeightMm}mm`);
         
-            // ✅ PDF options
+            // ✅ STEP 3: html2pdf options using canvas height
             const opt = {
               margin: 0,
               filename: `TEST-Receipt.pdf`,
@@ -90,16 +97,16 @@
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: {
                 unit: 'mm',
-                format: [80, receiptHeight],
+                format: [80, canvasHeightMm],   // ✅ 80mm wide, dynamic height
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            // ✅ Generate PDF
+            // ✅ STEP 4: Save PDF locally (for testing)
             await html2pdf().from(receipt).set(opt).save();
         
-            alert("✅ PDF saved with full height!");
+            alert("✅ PDF saved with full receipt height!");
           } catch (err) {
             console.error("❌ PDF error:", err);
             alert("❌ PDF generation failed: " + err.message);
