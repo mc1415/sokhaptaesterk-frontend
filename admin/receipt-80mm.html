@@ -108,7 +108,7 @@
               .rule({ style: 'single' });
         
             // 🛍 Items
-            saleData.items.forEach(item => {
+            (saleData.sale_items || []).forEach(item => {
               encoder.line(
                 `${item.name.padEnd(20).slice(0,20)} ${String(item.quantity).padStart(2)} x ${item.price.toFixed(2)}`
               );
