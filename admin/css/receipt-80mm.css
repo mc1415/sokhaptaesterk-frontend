@@ -23,11 +23,11 @@ html, body {
 }
 
 .receipt {
-    width: 310px;           /* Use a fixed pixel width. 288px is a great standard for 80mm paper. */
-    box-sizing: border-box; /* This is good practice. */
-    margin: 0 auto;         /* Centers the receipt on screen. */
-    padding: 0;             /* CRITICAL: Remove padding from the captured container. */
-    background: white;      /* Ensure a white background for the capture. */
+    width: 80mm;             /* CRITICAL: Define width in physical units. */
+    box-sizing: border-box;  /* CRITICAL: Makes padding and border part of the width. */
+    margin: 10px auto;       /* For on-screen viewing only. */
+    padding: 3mm;            /* IMPORTANT: Create an internal margin for the content. */
+    background: white;
     color: black;
 }
 
