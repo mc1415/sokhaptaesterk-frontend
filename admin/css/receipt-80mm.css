@@ -22,6 +22,12 @@ html, body {
     width: 80mm;
 }
 
+.receipt img {
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+}
+
 .receipt {
     width: 80mm;
     min-height: auto;
