@@ -111,8 +111,12 @@
             (saleData.sale_items || []).forEach(item => {
               // ✅ Use product_name instead of name
               const name = (item.product_name || '').padEnd(20).slice(0, 20);
-              const qty = String(item.quantity).padStart(2);
-              const price = item.price.toFixed(2);
+              const qty = String(item.quantity ?? 0).padStart(2);
+        
+              // ✅ Safely handle price (unit_price or price)
+              const priceValue = item.price ?? item.unit_price ?? 0;
+              const price = Number(priceValue).toFixed(2);
+        
               encoder.line(`${name} ${qty} x ${price}`);
             });
         
@@ -121,8 +125,8 @@
               .rule({ style: 'single' })
               .align('right')
               .bold(true)
-              .line(`Subtotal: ${saleData.total_amount.toFixed(2)} THB`)
-              .line(`TOTAL: ${saleData.total_amount.toFixed(2)} THB`)
+              .line(`Subtotal: ${Number(saleData.total_amount || 0).toFixed(2)} THB`)
+              .line(`TOTAL: ${Number(saleData.total_amount || 0).toFixed(2)} THB`)
               .bold(false)
               .newline()
               .align('center')
@@ -162,7 +166,8 @@
             alert("❌ Error: " + err.message);
           }
         });
-        </script>
+    </script>
+
 
 
 
