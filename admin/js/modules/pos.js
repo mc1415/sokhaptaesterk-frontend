@@ -531,8 +531,12 @@ function toggleButtonLoading(button, isLoading, originalText) {
 
     printReceiptBtn.addEventListener('click', () => {
         if (!lastCompletedSale) return;
+    
+        // ✅ Store the sale in localStorage
         localStorage.setItem('currentReceiptData', JSON.stringify(lastCompletedSale));
-        printReceiptViaPrintNode(lastCompletedSale);
+    
+        // ✅ Redirect to the receipt page
+        window.location.href = 'receipt-80mm.html';
     });
 
     // Close modal if user clicks outside of it
@@ -594,7 +598,7 @@ function toggleButtonLoading(button, isLoading, originalText) {
     resizer.addEventListener('mousedown', onMouseDown);
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
     
-    async function printReceiptViaPrintNode(saleData) {
+    /** async function printReceiptViaPrintNode(saleData) {
         try {
             const printBtn = document.getElementById('print-receipt-btn');
             toggleButtonLoading(printBtn, true, 'Generating PDF...');
@@ -651,7 +655,7 @@ function toggleButtonLoading(button, isLoading, originalText) {
             if (iframe) iframe.remove();
             toggleButtonLoading(printBtn, false, 'Print Small Receipt (80mm)');
         }
-    }
+    } **/
 
 
 
