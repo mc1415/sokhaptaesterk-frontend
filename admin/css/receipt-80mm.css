@@ -12,11 +12,13 @@ body {
 
 .receipt {
     width: 80mm;
-    background: #fff;
-    padding: 0;            /* 🔴 remove padding */
-    margin: 0;
-    box-shadow: none;      /* 🔴 remove shadow completely */
+    min-height: auto;       /* ✅ let height grow naturally */
+    height: auto !important; /* ✅ override any fixed height */
+    overflow: visible !important; /* ✅ nothing gets clipped */
+    background: white; /* ✅ clean PDF background */
+    display: block;
 }
+
 
 .receipt-header { text-align: center; margin-bottom: 10px; }
 
