@@ -114,6 +114,7 @@
         });
     </script> -->
     <!-- The final, corrected script block -->
+<!-- The final, definitive script block for 1:1 printing -->
 <script>
 document.getElementById('printnode-btn').addEventListener('click', async () => {
     const originalReceipt = document.querySelector('.receipt');
@@ -126,15 +127,16 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
     const receiptClone = originalReceipt.cloneNode(true);
     const captureContainer = document.createElement('div');
     
-    // Set the width to the exact physical dimension.
-    // This is the most direct instruction to html2pdf.js for the output size.
+    // --- THIS IS THE CRITICAL FIX FOR SCALING ---
+    // We set the width to the EXACT target physical width.
+    // No more artificial enlargement like 160mm.
     Object.assign(captureContainer.style, {
         position: 'absolute',
         top: '0',
         left: '0',
         zIndex: '-1',
         opacity: '0',
-        width: '80mm' // Use the physical unit
+        width: '80mm' // Capture at the final print size for a 1:1 scale.
     });
 
     captureContainer.appendChild(receiptClone);
@@ -149,16 +151,17 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             filename: 'receipt.pdf',
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: {
-                // Using a higher scale gives a better quality source image
-                // for the PDF, resulting in crisper text.
+                // A scale of 2 or 3 is still good for capturing a high-quality
+                // image, resulting in sharper text on the final print.
                 scale: 3, 
                 useCORS: true,
                 scrollY: 0,
             },
             jsPDF: {
                 unit: 'mm',
-                // CRITICAL: The 'format' property is removed to prevent the crash.
-                // The PDF size will be determined by the source element's width (80mm).
+                // The 'format' property is correctly removed to prevent the crash.
+                // html2pdf will now correctly infer the page size from the
+                // source element's 80mm width.
                 orientation: 'portrait'
             }
         };
@@ -173,7 +176,7 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             content: base64PDF,
             source: "POS System",
             options: {
-                "fit_to_page": false // This is essential for 1:1 printing
+                "fit_to_page": false // This remains essential
             }
         };
         
