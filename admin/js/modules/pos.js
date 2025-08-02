@@ -599,67 +599,56 @@ function toggleButtonLoading(button, isLoading, originalText) {
             const printBtn = document.getElementById('print-receipt-btn');
             toggleButtonLoading(printBtn, true, 'Generating PDF...');
     
-            // Put receipt data into localStorage for receipt-80mm.html
+            // Store sale data for receipt page
             localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
     
             // Create hidden iframe
             const iframe = document.createElement('iframe');
             iframe.style.position = 'absolute';
             iframe.style.left = '-9999px';
-            iframe.style.width = '80mm';
-            iframe.style.border = 'none';
+            iframe.src = 'receipt-80mm.html';
             document.body.appendChild(iframe);
     
-            // Wait for iframe to load
-            await new Promise((resolve, reject) => {
-                iframe.onload = resolve;
-                iframe.onerror = reject;
-                iframe.src = 'receipt-80mm.html';
-            });
-    
-            // Wait a moment for receipt content to render
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(resolve => iframe.onload = resolve);
+            await new Promise(r => setTimeout(r, 1000)); // wait for content to render
     
             const receiptBody = iframe.contentWindow.document.body;
     
-            // Wait for all images to fully load
-            const images = receiptBody.querySelectorAll('img');
-            await Promise.all([...images].map(img => {
+            // Wait for all images to load (important for logo)
+            const imgs = receiptBody.querySelectorAll('img');
+            await Promise.all([...imgs].map(img => {
                 if (img.complete) return Promise.resolve();
                 return new Promise(res => { img.onload = res; img.onerror = res; });
             }));
     
-            // Measure actual height for correct PDF sizing
-            const contentHeightPx = receiptBody.scrollHeight;
-            const contentHeightMm = contentHeightPx / 3.7795296;
+            // ✅ CAPTURE the entire receipt as ONE IMAGE
+            const canvas = await html2canvas(receiptBody, { scale: 3, useCORS: true });
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
     
-            // PDF options
-            const opt = {
-                margin: 0,
-                filename: `TEST-receipt-${saleData.id}.pdf`,
-                image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: { scale: 3, dpi: 300, useCORS: true },
-                jsPDF: {
-                    unit: 'mm',
-                    format: [80, contentHeightMm],   // ✅ single custom page
-                    orientation: 'portrait'
-                },
-                pagebreak: { mode: ['avoid', 'css', 'legacy'] }
-            };
+            // ✅ CALCULATE correct PDF size
+            const imgWidthMm = 80; // width fixed for thermal
+            const imgHeightMm = (canvas.height / canvas.width) * imgWidthMm;
     
-            // Generate & save PDF for testing
-            await html2pdf().from(receiptBody).set(opt).save();
+            // ✅ CREATE single-page PDF with just the image
+            const pdf = new jspdf.jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [imgWidthMm, imgHeightMm]
+            });
     
-            alert('✅ Test PDF saved! Check Downloads folder.');
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidthMm, imgHeightMm);
     
+            // ✅ SAVE PDF for testing (later we’ll send base64 to PrintNode)
+            pdf.save(`TEST-receipt-${saleData.id}.pdf`);
+    
+            alert('✅ Test PDF saved! Check Downloads.');
         } catch (err) {
-            console.error('❌ Printing error:', err);
-            alert('Error while generating PDF: ' + err.message);
+            console.error('❌ Print error:', err);
+            alert('Error while generating receipt: ' + err.message);
         } finally {
             // Cleanup iframe
             const iframe = document.querySelector('iframe[src="receipt-80mm.html"]');
             if (iframe) iframe.remove();
-    
             toggleButtonLoading(printBtn, false, 'Print Small Receipt (80mm)');
         }
     }
