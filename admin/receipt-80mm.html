@@ -129,11 +129,12 @@
         
             // ✅ html2pdf settings for true 80mm thermal width
             const opt = {
-              margin:       [0, 0, 0, 0],
-              filename:     'receipt.pdf',
-              image:        { type: 'jpeg', quality: 1.0 },
-              html2canvas:  { scale: 3, useCORS: true },
-              jsPDF:        { unit: 'mm', format: [80, receiptHeight], orientation: 'portrait' }
+              margin: 0,  // ✅ No top/bottom margin in PDF
+              filename: 'receipt.pdf',
+              image: { type: 'jpeg', quality: 1.0 },
+              html2canvas: { scale: 3, useCORS: true },
+              jsPDF: { unit: 'mm', format: [80, receiptHeight], orientation: 'portrait' },
+              pagebreak: { mode: ['avoid'] }
             };
         
             // ✅ Generate PDF as Blob
