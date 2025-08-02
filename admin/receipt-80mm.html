@@ -23,7 +23,7 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Item</th>
+                    <th style="text-align: left;">Item</th>
                     <th>Qty</th>
                     <th>Price</th>
                     <th>Total</th>
@@ -70,33 +70,40 @@
     <script>
         document.getElementById('printnode-btn').addEventListener('click', async () => {
           try {
-            // ✅ Get receipt DOM element
+            // ✅ Grab receipt DOM element
             const receipt = document.querySelector('.receipt');
         
-            // ✅ html2pdf options for test save
+            // ✅ Convert pixels to mm (1 mm ≈ 3.78 px)
+            const pxToMm = px => px / 3.78;
+            const receiptHeight = pxToMm(receipt.scrollHeight);
+        
+            console.log(`📝 Calculated receipt height: ${receiptHeight} mm`);
+        
+            // ✅ html2pdf options with dynamic height
             const opt = {
               margin: 0,
-              filename: `TEST-Receipt.pdf`,  // 👈 file will download
+              filename: `TEST-Receipt.pdf`,
               image: { type: 'jpeg', quality: 1.0 },
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: {
                 unit: 'mm',
-                format: [80, receipt.scrollHeight / 3.78], // 80mm width, dynamic height
+                format: [80, receiptHeight],  // ✅ width fixed, height matches content
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            // ✅ Generate & Save PDF locally
+            // ✅ Generate PDF & Save
             await html2pdf().from(receipt).set(opt).save();
         
-            alert("✅ PDF saved! Check your Downloads folder.");
+            alert("✅ PDF saved! Height is now dynamic.");
           } catch (err) {
             console.error("❌ PDF error:", err);
             alert("❌ PDF generation failed: " + err.message);
           }
         });
     </script>
+
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
