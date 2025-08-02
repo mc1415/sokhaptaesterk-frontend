@@ -121,11 +121,21 @@
         
             const receipt = document.querySelector('.receipt');
 
-            // ✅ STEP 1: Temporarily make receipt “oversized”
+            // ✅ Save original styles
             const originalWidth = receipt.style.width;
-            receipt.style.width = '160mm';   // 🔥 capture at double size
+            const originalPos = receipt.style.position;
+            const originalTop = receipt.style.top;
+            const originalLeft = receipt.style.left;
         
-            // ✅ STEP 2: Capture with html2canvas at high scale
+            // ✅ STEP 1: Oversize width for “bigger capture”
+            receipt.style.width = '160mm';
+        
+            // ✅ STEP 2: Pin to very top-left
+            receipt.style.position = 'absolute';
+            receipt.style.top = '0';
+            receipt.style.left = '0';
+        
+            // ✅ STEP 3: Capture
             const canvas = await html2canvas(receipt, { 
               scale: 3,
               useCORS: true,
@@ -135,12 +145,43 @@
               windowHeight: receipt.scrollHeight
             });
         
-            // ✅ STEP 3: Reset receipt width back
+            // ✅ STEP 4: Restore styles
             receipt.style.width = originalWidth || '';
+            receipt.style.position = originalPos;
+            receipt.style.top = originalTop;
+            receipt.style.left = originalLeft;
         
-            // ✅ STEP 4: Convert to PDF with true 80mm width
+            // ✅ (Optional) STEP 5: Trim any leftover transparent space at top
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let firstNonEmptyRow = 0;
+        
+            for (let y = 0; y < canvas.height; y++) {
+              let rowHasContent = false;
+              for (let x = 0; x < canvas.width; x++) {
+                const alpha = imgData[(y * canvas.width + x) * 4 + 3];
+                if (alpha > 0) {
+                  rowHasContent = true;
+                  break;
+                }
+              }
+              if (rowHasContent) {
+                firstNonEmptyRow = y;
+                break;
+              }
+            }
+        
+            // 🔥 Crop the top transparent pixels
+            const croppedHeight = canvas.height - firstNonEmptyRow;
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = canvas.width;
+            croppedCanvas.height = croppedHeight;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCtx.drawImage(canvas, 0, -firstNonEmptyRow);
+        
+            // ✅ STEP 6: Convert to PDF (true 80mm)
             const pxToMm = px => px / 3.78;
-            const canvasHeightMm = pxToMm(canvas.height);
+            const canvasHeightMm = pxToMm(croppedCanvas.height) / 2; // because we doubled width
         
             const opt = {
               margin: 0,
@@ -149,17 +190,16 @@
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: { 
                 unit: 'mm',
-                format: [80, canvasHeightMm / 2],  // 🔥 divide height by 2 since we doubled width
+                format: [80, canvasHeightMm],
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            // ✅ STEP 5: Generate PDF
-            const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
+            const dataUri = await html2pdf().from(croppedCanvas).set(opt).outputPdf('datauristring');
             const base64PDF = dataUri.split(',')[1];
         
-            // ✅ STEP 6: Send to PrintNode
+            // ✅ STEP 7: Send to PrintNode
             const response = await fetch("https://api.printnode.com/printjobs", {
               method: "POST",
               headers: {
@@ -178,7 +218,7 @@
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "PrintNode request failed");
         
-            alert("✅ Oversized capture sent to printer!");
+            alert("✅ Perfect PDF sent to printer — no top gap!");
           } catch (err) {
             console.error("❌ Printing error:", err);
             alert("❌ " + err.message);
