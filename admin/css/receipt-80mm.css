@@ -10,11 +10,11 @@ body {
     color: #000;
 }
 .receipt {
-    width: 80mm; /* Standard thermal printer width */
-    background: #fff;
-    padding: 5mm;
-    margin: 0 auto;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  width: 80mm;
+  background: #fff;
+  padding: 0;       /* 👈 remove for print clean edge */
+  margin: 0 auto;
+  box-shadow: none; /* 👈 no shadow in print */
 }
 
 .receipt-header { text-align: center; margin-bottom: 10px; }
@@ -42,7 +42,19 @@ body {
 .receipt-footer p { margin: 2px 0; }
 
 @media print {
-    body { background-color: white; }
-    .receipt { box-shadow: none; margin: 0; padding: 0; width: 100%; }
-    @page { size: 80mm auto; margin: 2mm; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  .receipt {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 80mm;      /* Force correct paper width */
+  }
+  @page {
+    size: 80mm auto;  /* 👈 Forces thermal roll width, infinite height */
+    margin: 0;        /* No extra blank top/bottom */
+  }
 }
