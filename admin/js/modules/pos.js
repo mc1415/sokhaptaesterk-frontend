@@ -638,19 +638,21 @@ function toggleButtonLoading(button, isLoading, originalText) {
                             filename: `TEST-receipt-${saleData.id}.pdf`,
                             image: { type: 'jpeg', quality: 1.0 },
                             html2canvas: {
-                                scale: 3,
-                                dpi: 300,
-                                useCORS: true,
-                                scrollX: 0,
-                                scrollY: 0
-                            },
-                            jsPDF: {
+                               scale: 3,
+                               dpi: 300,
+                               useCORS: true,
+                               scrollX: 0,
+                               scrollY: 0,
+                               windowWidth: 800
+                           },
+                           jsPDF: {
                                unit: 'mm',
-                               format: [80, contentHeightMm],  // ✅ ONE continuous page
+                               format: [80, contentHeightMm],
                                orientation: 'portrait'
-                            },
-                            pagebreak: { mode: ['avoid'] }
-                        };
+                           }
+                        }).from(receiptBody).toPdf().get('pdf').then(pdf => {
+                           pdf.internal.write(0, 'Tw'); // Forces print styles
+                        });
     
                         /* ✅ Generate and save PDF locally for inspection */
                         await html2pdf().from(receiptBody).set(opt).save();
