@@ -647,9 +647,9 @@ function toggleButtonLoading(button, isLoading, originalText) {
                            },
                            jsPDF: {
                                unit: 'mm',
-                               format: [80, contentHeightMm],
+                               format: [80, contentHeightMm],  // ✅ one tall page
                                orientation: 'portrait'
-                           }
+                            }
                         }).from(receiptBody).toPdf().get('pdf').then(pdf => {
                            pdf.internal.write(0, 'Tw'); // Forces print styles
                         });
