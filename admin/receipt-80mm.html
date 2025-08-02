@@ -121,21 +121,28 @@
         
             const receipt = document.querySelector('.receipt');
 
-            // ✅ STEP 1: High-res snapshot of ONLY the receipt div
+            // ✅ TEMPORARILY ZOOM RECEIPT
+            receipt.style.transform = 'scale(1.3)';     // ✅ makes everything 30% bigger
+            receipt.style.transformOrigin = 'top left';
+        
+            // ✅ CAPTURE RECEIPT
             const canvas = await html2canvas(receipt, { 
               scale: 3,
               useCORS: true,
               scrollX: 0,
               scrollY: 0,
-              windowWidth: receipt.scrollWidth,
-              windowHeight: receipt.scrollHeight
+              windowWidth: receipt.scrollWidth * 1.3,   // match zoom
+              windowHeight: receipt.scrollHeight * 1.3
             });
         
-            // ✅ STEP 2: Convert canvas height to mm
+            // ✅ RESET ZOOM
+            receipt.style.transform = '';
+            receipt.style.transformOrigin = '';
+        
+            // ✅ CONVERT HEIGHT & MAKE PDF
             const pxToMm = px => px / 3.78;
             const canvasHeightMm = pxToMm(canvas.height);
         
-            // ✅ STEP 3: Build PDF with exact canvas height
             const opt = {
               margin: 0,
               filename: 'receipt.pdf',
@@ -143,17 +150,16 @@
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: { 
                 unit: 'mm',
-                format: [80, canvasHeightMm], 
+                format: [80, canvasHeightMm],
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            // ✅ STEP 4: Generate PDF as Base64
             const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
             const base64PDF = dataUri.split(',')[1];
         
-            // ✅ STEP 5: Send to PrintNode
+            // ✅ SEND TO PRINTNODE
             const response = await fetch("https://api.printnode.com/printjobs", {
               method: "POST",
               headers: {
@@ -172,7 +178,7 @@
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "PrintNode request failed");
         
-            alert("✅ Receipt sent to printer without gaps or cut-offs!");
+            alert("✅ Bigger full-width PDF sent to printer!");
           } catch (err) {
             console.error("❌ Printing error:", err);
             alert("❌ " + err.message);
