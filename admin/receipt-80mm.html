@@ -82,6 +82,8 @@
               margin: 0,
               filename: `TEST-Receipt.pdf`,
               image: { type: 'jpeg', quality: 1.0 },
+            const rect = receipt.getBoundingClientRect();,
+            console.log("Receipt dimensions:", rect.width, rect.height);,
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: {
                 unit: 'mm',
