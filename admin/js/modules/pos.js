@@ -595,117 +595,76 @@ function toggleButtonLoading(button, isLoading, originalText) {
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
     
     async function printReceiptViaPrintNode(saleData) {
-        // --- SECURITY WARNING ---
-        // The API key and Printer ID are exposed here.
-        // This is not recommended for a production environment.
-        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
-        const printerId = 74589060; // Your XP-80C Printer ID
-    
         const printBtn = document.getElementById('print-receipt-btn');
-        toggleButtonLoading(printBtn, true, 'Print Small Receipt (80mm)');
+        toggleButtonLoading(printBtn, true, 'Generate Test PDF');
     
-        // Make the receipt data available BEFORE iframe loads
+        // Make the receipt data available before iframe loads
         localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
     
         const iframe = document.createElement('iframe');
         iframe.style.position = 'absolute';
         iframe.style.left = '-9999px';
-        iframe.style.width = '80mm'; // Crucial for correct rendering
+        iframe.style.width = '80mm';
         iframe.style.border = 'none';
     
         try {
-            // --- STEP 1: Generate Base64 PDF dynamically ---
-            const base64Content = await new Promise((resolve, reject) => {
+            await new Promise((resolve, reject) => {
                 iframe.onload = async () => {
                     try {
-                        // Prevent the page from triggering its own print dialog
-                        iframe.contentWindow.print = () => {};
-    
-                        // Wait for receipt to fully render inside iframe
+                        // Wait for receipt to render fully
                         await new Promise(r => setTimeout(r, 1000));
     
                         const receiptBody = iframe.contentWindow.document.body;
     
-                        // ✅ Measure ACTUAL rendered size
+                        // 🔢 Measure actual content size
                         const contentHeightPx = receiptBody.scrollHeight;
                         const contentWidthPx = receiptBody.scrollWidth;
     
-                        // 🔢 Convert PX → MM (1mm ≈ 3.7795px)
+                        // Convert to mm
                         const contentHeightMm = contentHeightPx / 3.7795296;
-                        const contentWidthMm = 80; // force to 80mm
+                        const contentWidthMm = 80;
     
-                        // ✅ html2pdf settings
+                        // ✅ html2pdf options for correct single-page PDF
                         const opt = {
                             margin: 0,
-                            filename: `receipt-${saleData.id}.pdf`,
+                            filename: `TEST-receipt-${saleData.id}.pdf`, // 👈 Will save to Downloads
                             image: { type: 'jpeg', quality: 1.0 },
                             html2canvas: {
-                                scale: 3, // sharper text for thermal printers
+                                scale: 3,
                                 dpi: 300,
                                 useCORS: true,
                                 width: contentWidthPx
                             },
                             jsPDF: {
                                 unit: 'mm',
-                                format: [contentWidthMm, contentHeightMm], // 👈 SINGLE PAGE sized exactly
+                                format: [contentWidthMm, contentHeightMm],
                                 orientation: 'portrait'
                             },
-                            pagebreak: { mode: ['avoid'] } // 👈 no auto-page-splitting
+                            pagebreak: { mode: ['avoid'] }
                         };
     
-                        // ✅ Create PDF → get Base64 string
-                        const dataUri = await html2pdf()
-                            .from(receiptBody)
-                            .set(opt)
-                            .outputPdf('datauristring');
+                        // 📝 SAVE PDF to your computer (no PrintNode yet)
+                        await html2pdf().from(receiptBody).set(opt).save();
     
-                        // Strip the Base64 prefix
-                        const base64 = dataUri.split(',')[1];
-                        resolve(base64);
-    
+                        alert('✅ PDF saved! Check your Downloads folder.');
+                        resolve();
                     } catch (error) {
                         reject(error);
                     }
                 };
     
-                // Start loading the receipt page
+                // Start loading the receipt
                 document.body.appendChild(iframe);
                 iframe.src = 'receipt-80mm.html';
             });
     
-            // --- STEP 2: Send PDF to PrintNode ---
-            const response = await fetch("https://api.printnode.com/printjobs", {
-                method: "POST",
-                headers: {
-                    "Authorization": "Basic " + btoa(apiKey + ":"),
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    printerId: printerId,
-                    title: `POS Receipt #${saleData.id}`,
-                    contentType: "pdf_base64",
-                    content: base64Content,
-                    source: "Sokha POS System"
-                })
-            });
-    
-            const responseData = await response.json();
-            if (!response.ok) {
-                throw new Error(responseData.message || 'PrintNode API request failed.');
-            }
-    
-            console.log("✅ Print job sent successfully:", responseData);
-            alert('✅ Receipt has been sent to the printer.');
-    
         } catch (error) {
-            console.error('❌ Failed to generate or print receipt:', error);
-            alert(`Printing failed: ${error.message}`);
+            console.error('❌ Failed to generate receipt PDF:', error);
+            alert(`PDF generation failed: ${error.message}`);
         } finally {
-            // --- STEP 3: Clean up ---
-            if (iframe) {
-                document.body.removeChild(iframe);
-            }
-            toggleButtonLoading(printBtn, false, 'Print Small Receipt (80mm)');
+            // Cleanup
+            if (iframe) document.body.removeChild(iframe);
+            toggleButtonLoading(printBtn, false, 'Generate Test PDF');
         }
     }
 
