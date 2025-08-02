@@ -72,18 +72,21 @@
           try {
             const receipt = document.querySelector('.receipt');
         
+            // ✅ Debug: check full receipt dimensions
+            const rect = receipt.getBoundingClientRect();
+            console.log("Receipt dimensions:", rect.width, rect.height);
+        
             // ✅ Add buffer so nothing gets cut off
             const pxToMm = px => px / 3.78;
             const receiptHeight = pxToMm(receipt.scrollHeight) + 15; // buffer in mm
         
             console.log(`📝 Calculated receipt height: ${receiptHeight} mm (with buffer)`);
         
+            // ✅ PDF options
             const opt = {
               margin: 0,
               filename: `TEST-Receipt.pdf`,
               image: { type: 'jpeg', quality: 1.0 },
-            const rect = receipt.getBoundingClientRect();,
-            console.log("Receipt dimensions:", rect.width, rect.height);,
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: {
                 unit: 'mm',
@@ -93,6 +96,7 @@
               pagebreak: { mode: ['avoid'] }
             };
         
+            // ✅ Generate PDF
             await html2pdf().from(receipt).set(opt).save();
         
             alert("✅ PDF saved with full height!");
@@ -102,17 +106,8 @@
           }
         });
     </script>
-
-
-
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-
-
-
-
 
 </body>
 </html>
