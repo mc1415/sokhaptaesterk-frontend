@@ -77,33 +77,37 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
   try {
     const receiptElement = document.querySelector('.receipt');
 
-    // --- html2pdf.js Configuration (The Fix) ---
-    // This configuration creates a direct 1:1 mapping from our 80mm HTML
-    // element to an 80mm PDF document, solving all scaling and cropping issues.
+    // STEP 1: Manually render the element to a canvas to get its dimensions.
+    // This is the most reliable way to determine the content's actual rendered size.
+    const canvas = await html2canvas(receiptElement, {
+      scale: 2, // A scale of 2 is a good balance of quality and performance.
+      useCORS: true
+    });
+
+    // STEP 2: Calculate the exact height in millimeters from the canvas.
+    const pxToMm = px => px / 3.78;
+    const contentHeightMm = pxToMm(canvas.height);
+
+    // STEP 3: Configure html2pdf with explicit, valid dimensions.
     const options = {
       margin: 0,
       filename: 'receipt.pdf',
       image: { type: 'jpeg', quality: 1.0 },
-      html2canvas: {
-        scale: 2, // A scale of 2 is sufficient with this method.
-        useCORS: true,
-        // We no longer need to force width, as the element's CSS is now in 'mm'.
-      },
       jsPDF: {
         unit: 'mm',
-        // Let html2pdf calculate the height automatically based on the content.
-        // We only enforce the 80mm width.
-        format: [80, 'auto'], 
+        // CRITICAL FIX: We now provide a valid numerical array [width, height],
+        // which jsPDF understands perfectly. This resolves the "Invalid argument" error.
+        format: [80, contentHeightMm],
         orientation: 'portrait'
       }
     };
-
-    // 1. GENERATE PDF AS BASE64
-    // html2pdf will now correctly handle the 80mm element.
+    
+    // STEP 4: Generate the PDF as a Base64 string.
+    // We pass the original element again, but the options will ensure it's processed correctly.
     const dataUri = await html2pdf().from(receiptElement).set(options).outputPdf('datauristring');
     const base64PDF = dataUri.split(',')[1];
 
-    // 2. SEND TO PRINTNODE API
+    // STEP 5: Send to the PrintNode API.
     const response = await fetch("https://api.printnode.com/printjobs", {
       method: "POST",
       headers: {
@@ -119,7 +123,7 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
       })
     });
 
-    // 3. HANDLE RESPONSE
+    // STEP 6: Handle the API response.
     const result = await response.json();
     if (!response.ok) {
       throw new Error(result.message || `PrintNode API Error (Status: ${response.status})`);
