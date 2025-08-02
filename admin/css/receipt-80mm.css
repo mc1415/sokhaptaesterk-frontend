@@ -40,21 +40,22 @@ body {
 
 .receipt-footer { text-align: center; margin-top: 15px; border-top: 1px dashed #000; padding-top: 10px; font-size: 0.9em; }
 .receipt-footer p { margin: 2px 0; }
-
 @media print {
   body {
     margin: 0;
     padding: 0;
-    background: white;
+    background: white !important;
+    color: black !important;
   }
   .receipt {
+    width: 80mm;
     box-shadow: none;
     margin: 0;
     padding: 0;
-    width: 80mm;      /* Force correct paper width */
+    display: block !important; /* ✅ force visibility */
   }
   @page {
-    size: 80mm auto;  /* 👈 Forces thermal roll width, infinite height */
-    margin: 0;        /* No extra blank top/bottom */
+    size: 80mm auto;
+    margin: 0;
   }
 }
