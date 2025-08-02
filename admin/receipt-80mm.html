@@ -121,41 +121,41 @@
           try {
             const receipt = document.querySelector('.receipt');
         
-            // ✅ Make sure receipt expands fully for capture
+            // ✅ Expand receipt fully for capture
             receipt.style.height = 'auto';
             receipt.style.overflow = 'visible';
         
-            // ✅ STEP 1: Render receipt into a high-res canvas
+            // ✅ STEP 1: High-res capture (scale=4)
             const canvas = await html2canvas(receipt, { 
-              scale: 3, 
+              scale: 4,                // 🔥 HIGHER RESOLUTION
               useCORS: true, 
               windowHeight: document.body.scrollHeight
             });
         
-            // ✅ STEP 2: Calculate exact height in mm
+            // ✅ STEP 2: Convert to mm for PDF
             const pxToMm = px => px / 3.78;
             const canvasHeightMm = pxToMm(canvas.height);
             console.log(`📝 PDF height: ${canvasHeightMm}mm`);
         
-            // ✅ STEP 3: Generate PDF but don’t auto-save
+            // ✅ STEP 3: Generate PDF (true 80mm wide)
             const opt = {
               margin: 0,
-              filename: `receipt.pdf`,   // not downloaded, just named
+              filename: `receipt.pdf`,
               image: { type: 'jpeg', quality: 1.0 },
-              html2canvas: { scale: 3, useCORS: true },
+              html2canvas: { scale: 4, useCORS: true },
               jsPDF: {
                 unit: 'mm',
-                format: [80, canvasHeightMm],
+                format: [80, canvasHeightMm],   // ✅ REAL 80MM WIDTH
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            // ✅ STEP 4: Output PDF as Base64 string (no download)
+            // ✅ STEP 4: Convert PDF to Base64
             const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
-            const base64PDF = dataUri.split(',')[1];  // strip "data:application/pdf;base64,"
+            const base64PDF = dataUri.split(',')[1];
         
-            // ✅ STEP 5: Send PDF to PrintNode
+            // ✅ STEP 5: Send to PrintNode
             const response = await fetch("https://api.printnode.com/printjobs", {
               method: "POST",
               headers: {
@@ -167,14 +167,17 @@
                 title: "Receipt",
                 contentType: "pdf_base64",
                 content: base64PDF,
-                source: "POS System"
+                source: "POS System",
+                options: {
+                  fit_to_page: false   // 🚫 DON’T SHRINK/FIT — PRINT 1:1
+                }
               })
             });
         
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "PrintNode request failed");
         
-            alert("✅ PDF sent to PrintNode printer!");
+            alert("✅ Full-size PDF sent to printer!");
             console.log("📤 PrintNode response:", result);
         
           } catch (err) {
@@ -182,7 +185,7 @@
             alert("❌ Printing failed: " + err.message);
           }
         });
-    </script>
+        </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
