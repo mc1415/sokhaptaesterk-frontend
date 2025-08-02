@@ -12,11 +12,11 @@ body {
 
 .receipt {
     width: 80mm;
-    min-height: auto;       /* ✅ let height grow naturally */
-    height: auto !important; /* ✅ override any fixed height */
-    overflow: visible !important; /* ✅ nothing gets clipped */
-    background: white; /* ✅ clean PDF background */
-    display: block;
+    min-height: auto;
+    height: auto !important;   /* ✅ force it to grow */
+    overflow: visible !important; /* ✅ don’t clip anything */
+    background: white;
+    padding-bottom: 20mm;      /* ✅ extra space for footer */
 }
 
 
