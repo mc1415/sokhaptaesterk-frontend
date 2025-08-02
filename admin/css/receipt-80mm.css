@@ -19,10 +19,14 @@ body {
 }
 
 .receipt-header { text-align: center; margin-bottom: 10px; }
+
 .logo {
-    width: 50px;
-    margin-bottom: 5px;
+    width: 100px;   /* Was 50px on screen – increase if too small, decrease if too big */
+    max-width: 120px;
+    display: block;
+    margin: 0 auto 5px auto;
 }
+
 .store-name { font-family: Moul; font-size: 1.1em; margin: 0; }
 .receipt-header p { margin: 2px 0; font-size: 0.9em; }
 
