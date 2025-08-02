@@ -15,12 +15,6 @@ html, body {
     padding: 0 !important;
     background: white;
 }
-.receipt {
-    margin: 0 auto;
-    padding: 10px; /* Let's add some padding for better looks */
-    width: 80mm;
-    box-sizing: border-box; /* Add this line */
-}
 
 .receipt img {
     display: block;
@@ -29,14 +23,21 @@ html, body {
 }
 
 .receipt {
-    width: 80mm;
-    min-height: auto;
-    height: auto !important;   /* ✅ force it to grow */
-    overflow: visible !important; /* ✅ don’t clip anything */
-    background: white;
-    padding-bottom: 20mm;      /* ✅ extra space for footer */
+    width: 288px;           /* Use a fixed pixel width. 288px is a great standard for 80mm paper. */
+    box-sizing: border-box; /* This is good practice. */
+    margin: 0 auto;         /* Centers the receipt on screen. */
+    padding: 0;             /* CRITICAL: Remove padding from the captured container. */
+    background: white;      /* Ensure a white background for the capture. */
+    color: black;
 }
 
+/* +++ ADD THIS RULE FOR INTERNAL SPACING +++ */
+.receipt-header,
+.receipt-info,
+.items-table,
+.receipt-footer {
+    padding: 0 10px; /* Apply horizontal padding to inner elements instead */
+}
 
 .receipt-header { text-align: center; margin-bottom: 10px; }
 
