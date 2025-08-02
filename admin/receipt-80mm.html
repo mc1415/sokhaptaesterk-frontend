@@ -68,109 +68,41 @@
     <script src="js/receipt-80mm.js"></script>
     <script src="js/receipt-printer-encoder.umd.js"></script>
     <script>
-        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";  // ✅ Your PrintNode API key
-        const printerId = 74589060;  // ✅ Your printer ID
-        
         document.getElementById('printnode-btn').addEventListener('click', async () => {
           try {
-            // ✅ Get sale data from localStorage
-            const saleData = JSON.parse(localStorage.getItem('currentReceiptData'));
-            if (!saleData) {
-              alert("❌ No receipt data found.");
-              return;
-            }
+            // ✅ Get receipt DOM element
+            const receipt = document.querySelector('.receipt');
         
-            // ✅ Build the ESC/POS receipt
-            const encoder = new ReceiptPrinterEncoder({
-              language: 'esc-pos',
-              codepageMapping: 'epson',
-              codepage: 'auto',
-              columns: 42,
-              feedBeforeCut: 4
-            });
-        
-            encoder
-              .initialize()
-              .align('center')
-              .bold(true)
-              .size(2)
-              .line('សុខាផ្ទះទឹក')    // Store name in Khmer
-              .size(1)
-              .bold(false)
-              .line('Tel: +855 78 659 799')
-              .newline()
-        
-              // 🔻 Receipt Info
-              .align('left')
-              .line(`Receipt No: ${saleData.receipt_number || ''}`)
-              .line(`Date: ${new Date(saleData.transaction_time).toLocaleString()}`)
-              .line(`Cashier: ${saleData.staff?.full_name || 'Unknown'}`)
-              .rule({ style: 'single' });
-        
-            // 🛍 Items
-            (saleData.sale_items || []).forEach(item => {
-              console.log("🛒 Item from sale_items:", item); // ✅ Debug log
-            
-              // ✅ Use name_en for product name
-              const name = (item.name_en || '').padEnd(20).slice(0, 20);
-            
-              const qty = String(item.quantity ?? 0).padStart(2);
-            
-              // ✅ Use price_at_sale for price
-              const priceValue = item.price_at_sale ?? 0;
-              const price = Number(priceValue).toFixed(2);
-            
-              encoder.line(`${name} ${qty} x ${price}`);
-            });
-
-        
-            // 💵 Totals
-            encoder
-              .rule({ style: 'single' })
-              .align('right')
-              .bold(true)
-              .line(`Subtotal: ${Number(saleData.total_amount || 0).toFixed(2)} THB`)
-              .line(`TOTAL: ${Number(saleData.total_amount || 0).toFixed(2)} THB`)
-              .bold(false)
-              .newline()
-              .align('center')
-              .line('Thank you for your business!')
-              .line('សូមអរគុណ!')
-              .newline()
-              .cut('full');   // ✂️ Full paper cut
-        
-            // ✅ Encode receipt to ESC/POS bytes
-            const escposData = encoder.encode();
-        
-            // ✅ Convert binary data to Base64 for PrintNode
-            const base64Content = btoa(String.fromCharCode(...escposData));
-        
-            // ✅ Send to PrintNode
-            const response = await fetch("https://api.printnode.com/printjobs", {
-              method: "POST",
-              headers: {
-                "Authorization": "Basic " + btoa(apiKey + ":"),
-                "Content-Type": "application/json"
+            // ✅ html2pdf options for test save
+            const opt = {
+              margin: 0,
+              filename: `TEST-Receipt.pdf`,  // 👈 file will download
+              image: { type: 'jpeg', quality: 1.0 },
+              html2canvas: { scale: 3, useCORS: true },
+              jsPDF: {
+                unit: 'mm',
+                format: [80, receipt.scrollHeight / 3.78], // 80mm width, dynamic height
+                orientation: 'portrait'
               },
-              body: JSON.stringify({
-                printerId: printerId,
-                title: "Receipt",
-                contentType: "raw_base64",
-                content: base64Content,
-                source: "POS System"
-              })
-            });
+              pagebreak: { mode: ['avoid'] }
+            };
         
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "PrintNode failed");
+            // ✅ Generate & Save PDF locally
+            await html2pdf().from(receipt).set(opt).save();
         
-            alert("✅ Receipt sent to printer!");
+            alert("✅ PDF saved! Check your Downloads folder.");
           } catch (err) {
-            console.error("❌ Printing error:", err);
-            alert("❌ Error: " + err.message);
+            console.error("❌ PDF error:", err);
+            alert("❌ PDF generation failed: " + err.message);
           }
         });
     </script>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
 
 
 
