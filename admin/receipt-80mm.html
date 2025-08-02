@@ -125,13 +125,17 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
     const receiptClone = originalReceipt.cloneNode(true);
     const captureContainer = document.createElement('div');
     
+    // --- KEY CHANGE #1 ---
+    // Set the width to the exact pixel width of 80mm paper at 203 DPI.
+    // This ensures the initial render is perfectly sized for the printer.
+    const printerWidthInPx = 640; 
     Object.assign(captureContainer.style, {
         position: 'absolute',
         top: '0',
         left: '0',
         zIndex: '-1',
         opacity: '0',
-        width: '80mm'
+        width: `${printerWidthInPx}px` // Use calculated pixel width
     });
 
     captureContainer.appendChild(receiptClone);
@@ -146,12 +150,18 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             filename: 'receipt.pdf',
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: {
-                scale: 3,
+                // --- KEY CHANGE #2 ---
+                // We no longer need a high scale factor because we are rendering
+                // at the target resolution already. This improves accuracy.
+                scale: 1, 
                 useCORS: true,
                 scrollY: 0,
             },
             jsPDF: {
                 unit: 'mm',
+                // Define the format based on our known width.
+                // This tells jsPDF to create an 80mm wide document.
+                format: [80, 'auto'], 
                 orientation: 'portrait'
             }
         };
@@ -159,8 +169,6 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
         const dataUri = await html2pdf().from(receiptClone).set(opt).outputPdf('datauristring');
         const base64PDF = dataUri.split(',')[1];
         
-        // --- THIS IS THE MODIFIED PART ---
-        // Create a full payload object including the 'options' key
         const printNodePayload = {
             printerId: printerId,
             title: "Receipt",
@@ -168,19 +176,17 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             content: base64PDF,
             source: "POS System",
             options: {
-                "fit_to_page": false // Explicitly disable scaling/fitting
+                "fit_to_page": false // This remains crucial
             }
         };
-        // --- END OF MODIFICATION ---
         
-        // Send the complete payload to PrintNode
         const response = await fetch("https://api.printnode.com/printjobs", {
             method: "POST",
             headers: {
                 "Authorization": "Basic " + btoa(apiKey + ":"),
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(printNodePayload) // Send the new payload object
+            body: JSON.stringify(printNodePayload)
         });
 
         const result = await response.json();
