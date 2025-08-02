@@ -598,9 +598,10 @@ function toggleButtonLoading(button, isLoading, originalText) {
         const printBtn = document.getElementById('print-receipt-btn');
         toggleButtonLoading(printBtn, true, 'Generate Test PDF');
     
-        // Make the receipt data available before iframe loads
+        // Put receipt data into localStorage for receipt-80mm.html
         localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
     
+        // Create hidden iframe
         const iframe = document.createElement('iframe');
         iframe.style.position = 'absolute';
         iframe.style.left = '-9999px';
@@ -611,64 +612,68 @@ function toggleButtonLoading(button, isLoading, originalText) {
             await new Promise((resolve, reject) => {
                 iframe.onload = async () => {
                     try {
-                        // Wait for receipt to render fully
+                        // Wait for DOM to render
                         await new Promise(r => setTimeout(r, 1000));
     
                         const receiptBody = iframe.contentWindow.document.body;
     
-                        // 🔢 Measure actual content size
+                        /* ✅ WAIT for all images (like logo) to load */
+                        const allImages = receiptBody.querySelectorAll('img');
+                        await Promise.all(Array.from(allImages).map(img => {
+                            if (img.complete) return Promise.resolve();
+                            return new Promise(res => {
+                                img.onload = res;
+                                img.onerror = res;
+                            });
+                        }));
+    
+                        /* ✅ Measure content height */
                         const contentHeightPx = receiptBody.scrollHeight;
-                        const contentWidthPx = receiptBody.scrollWidth;
-    
-                        // Convert to mm
                         const contentHeightMm = contentHeightPx / 3.7795296;
-                        const contentWidthMm = 80;
     
-                        // ✅ html2pdf options for correct single-page PDF
+                        /* ✅ html2pdf options */
                         const opt = {
-                          margin: 0,
-                          filename: `TEST-receipt-${saleData.id}.pdf`,
-                          image: { type: 'jpeg', quality: 1.0 },
-                          html2canvas: {
-                            scale: 3,
-                            dpi: 300,
-                            useCORS: true,
-                            scrollX: 0,
-                            scrollY: 0,
-                            windowWidth: 800
-                          },
-                          jsPDF: {
-                            unit: 'mm',
-                            format: [80, contentHeightMm],   // 👈 single custom “page”
-                            orientation: 'portrait'
-                          },
-                          pagebreak: { mode: ['avoid', 'css', 'legacy'] } // 👈 stops auto breaks
+                            margin: 0,
+                            filename: `TEST-receipt-${saleData.id}.pdf`,
+                            image: { type: 'jpeg', quality: 1.0 },
+                            html2canvas: {
+                                scale: 3,
+                                dpi: 300,
+                                useCORS: true,
+                                scrollX: 0,
+                                scrollY: 0
+                            },
+                            jsPDF: {
+                                unit: 'mm',
+                                format: 'a4',  // ✅ TEMP for debug capture
+                                orientation: 'portrait'
+                            },
+                            pagebreak: { mode: ['avoid'] }
                         };
     
-                        // 📝 SAVE PDF to your computer (no PrintNode yet)
+                        /* ✅ Generate and save PDF locally for inspection */
                         await html2pdf().from(receiptBody).set(opt).save();
     
-                        alert('✅ PDF saved! Check your Downloads folder.');
+                        alert('✅ Test PDF saved! Check your Downloads.');
                         resolve();
                     } catch (error) {
                         reject(error);
                     }
                 };
     
-                // Start loading the receipt
                 document.body.appendChild(iframe);
                 iframe.src = 'receipt-80mm.html';
             });
     
         } catch (error) {
-            console.error('❌ Failed to generate receipt PDF:', error);
+            console.error('❌ Failed to generate test PDF:', error);
             alert(`PDF generation failed: ${error.message}`);
         } finally {
-            // Cleanup
             if (iframe) document.body.removeChild(iframe);
             toggleButtonLoading(printBtn, false, 'Generate Test PDF');
         }
     }
+
 
 
     // --- 7. INITIAL DATA LOAD ---
