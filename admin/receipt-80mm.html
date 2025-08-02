@@ -68,12 +68,12 @@
     <script src="js/receipt-80mm.js"></script>
     <script src="js/receipt-printer-encoder.umd.js"></script>
     <script>
-        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";  // Replace with your key
-        const printerId = 74589060;  // Replace with your printer ID
+        const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";  // ✅ Your PrintNode API key
+        const printerId = 74589060;  // ✅ Your printer ID
         
         document.getElementById('printnode-btn').addEventListener('click', async () => {
           try {
-            // ✅ Get sale data from POS via localStorage
+            // ✅ Get sale data from localStorage
             const saleData = JSON.parse(localStorage.getItem('currentReceiptData'));
             if (!saleData) {
               alert("❌ No receipt data found.");
@@ -82,36 +82,38 @@
         
             // ✅ Build the ESC/POS receipt
             const encoder = new ReceiptPrinterEncoder({
-              language: 'esc-pos',      // ESC/POS for XP-80C
-              codepageMapping: 'epson', // Ensures Khmer codepage works
-              codepage: 'auto',         // Automatically pick correct codepage
-              columns: 42,              // 80mm paper ~ 42 chars
-              feedBeforeCut: 4          // Feed extra lines before cutting
+              language: 'esc-pos',
+              codepageMapping: 'epson',
+              codepage: 'auto',
+              columns: 42,
+              feedBeforeCut: 4
             });
         
             encoder
               .initialize()
               .align('center')
               .bold(true)
-              .size(2)                        // double-size text
-              .line('សុខាផ្ទះទឹក')            // Store name in Khmer
+              .size(2)
+              .line('សុខាផ្ទះទឹក')    // Store name in Khmer
               .size(1)
               .bold(false)
               .line('Tel: +855 78 659 799')
               .newline()
         
-              // 🔻 Receipt info
+              // 🔻 Receipt Info
               .align('left')
-              .line(`Receipt No: ${saleData.id || ''}`)
-              .line(`Date: ${new Date().toLocaleString()}`)
-              .line(`Cashier: ${saleData.user?.fullName || 'Unknown'}`)
+              .line(`Receipt No: ${saleData.receipt_number || ''}`)
+              .line(`Date: ${new Date(saleData.transaction_time).toLocaleString()}`)
+              .line(`Cashier: ${saleData.staff?.full_name || 'Unknown'}`)
               .rule({ style: 'single' });
         
             // 🛍 Items
             (saleData.sale_items || []).forEach(item => {
-              encoder.line(
-                `${item.name.padEnd(20).slice(0,20)} ${String(item.quantity).padStart(2)} x ${item.price.toFixed(2)}`
-              );
+              // ✅ Use product_name instead of name
+              const name = (item.product_name || '').padEnd(20).slice(0, 20);
+              const qty = String(item.quantity).padStart(2);
+              const price = item.price.toFixed(2);
+              encoder.line(`${name} ${qty} x ${price}`);
             });
         
             // 💵 Totals
@@ -161,6 +163,7 @@
           }
         });
         </script>
+
 
 
 </body>
