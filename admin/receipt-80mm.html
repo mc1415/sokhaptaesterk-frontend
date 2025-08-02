@@ -116,6 +116,7 @@
     </script> -->
     <!-- The final, corrected script block -->
 <script>
+// --- Configuration ---
 const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk"; 
 const printerId = 74589060; 
 
@@ -124,53 +125,52 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
   try {
     const receiptElement = document.querySelector('.receipt');
 
-    // 1. CAPTURE HTML TO CANVAS
-    // Renders the pixel-based HTML receipt into a high-quality canvas image.
+    // 1. CAPTURE HTML TO CANVAS (WITH THE FIX)
     const canvas = await html2canvas(receiptElement, { 
-      scale: 3,       // Increase scale for better print quality
-      useCORS: true   // Required for loading external images like the logo
+      scale: 3,
+      useCORS: true,
+
+      // +++ THIS IS THE FIX +++
+      // Force html2canvas to use the element's full scroll width for the capture,
+      // ignoring the browser window's width. This prevents cropping.
+      width: receiptElement.scrollWidth,
+      windowWidth: receiptElement.scrollWidth
+      // +++++++++++++++++++++++
     });
 
     // 2. CALCULATE DYNAMIC PDF HEIGHT
-    // Converts the canvas's pixel height to millimeters to ensure the PDF page
-    // is exactly the right size, preventing cutoff or extra white space.
-    const pxToMm = px => px / 3.78; // A common conversion factor for 96 DPI screens
+    const pxToMm = px => px / 3.78;
     const canvasHeightMm = pxToMm(canvas.height);
 
-    // 3. CONFIGURE PDF GENERATION (html2pdf.js)
-    // The key is setting a physical width of 80mm and the dynamic height.
+    // 3. CONFIGURE PDF GENERATION
     const options = {
       margin: 0,
-      filename: 'receipt.pdf', // Used for local saving, not for API call
+      filename: 'receipt.pdf',
       image: { type: 'jpeg', quality: 1.0 },
-      html2canvas: { scale: 3, useCORS: true },
+      html2canvas: { scale: 3, useCORS: true }, // Not used here, but good practice
       jsPDF: { 
         unit: 'mm',
-        // This format is crucial: 80mm wide (physical paper size) and a
-        // height that matches the content. This solves the scaling issue.
         format: [80, canvasHeightMm],
         orientation: 'portrait'
       }
     };
 
     // 4. GENERATE PDF AS BASE64
-    // outputPdf('datauristring') creates the PDF in memory without a download prompt.
     const dataUri = await html2pdf().from(receiptElement).set(options).outputPdf('datauristring');
-    const base64PDF = dataUri.split(',')[1]; // Extract raw Base64 content
+    const base64PDF = dataUri.split(',')[1];
 
     // 5. SEND TO PRINTNODE API
-    // This fetch call is structured according to the PrintNode API documentation.
     const response = await fetch("https://api.printnode.com/printjobs", {
       method: "POST",
       headers: {
-        "Authorization": "Basic " + btoa(apiKey + ":"), // Basic Auth with API Key
+        "Authorization": "Basic " + btoa(apiKey + ":"),
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         printerId: printerId,
         title: "Receipt from POS",
-        contentType: "pdf_base64", // Tells PrintNode what kind of data we're sending
-        content: base64PDF,        // The Base64-encoded PDF
+        contentType: "pdf_base64",
+        content: base64PDF,
         source: "Web POS System"
       })
     });
@@ -178,7 +178,6 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
     // 6. HANDLE RESPONSE
     const result = await response.json();
     if (!response.ok) {
-      // If PrintNode returns an error, display its message.
       throw new Error(result.message || `PrintNode API Error (Status: ${response.status})`);
     }
 
