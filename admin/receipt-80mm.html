@@ -121,25 +121,31 @@
         
             const receipt = document.querySelector('.receipt');
 
-            // ✅ STEP 1: Capture normally (no transform)
+            // ✅ STEP 1: TEMPORARILY SCALE UP THE RECEIPT DOM
+            const originalWidth = receipt.offsetWidth;
+            const scaleFactor = 1.3;  // 🔥 try 1.3 (30% larger); tweak if needed
+            receipt.style.transform = `scale(${scaleFactor})`;
+            receipt.style.transformOrigin = 'top left';
+            receipt.style.width = `${originalWidth}px`;  // keep layout from collapsing
+        
+            // ✅ STEP 2: CAPTURE AT HIGH RES
             const canvas = await html2canvas(receipt, { 
               scale: 3,
               useCORS: true,
               scrollX: 0,
               scrollY: 0,
-              windowWidth: receipt.scrollWidth,
-              windowHeight: receipt.scrollHeight
+              windowWidth: receipt.scrollWidth * scaleFactor,
+              windowHeight: receipt.scrollHeight * scaleFactor
             });
         
-            // ✅ STEP 2: Convert canvas height
+            // ✅ STEP 3: RESET DOM SCALE (so your webpage looks normal again)
+            receipt.style.transform = '';
+            receipt.style.transformOrigin = '';
+            receipt.style.width = '';
+        
+            // ✅ STEP 4: USE TRUE 80MM PDF SIZE (NO CROPPING)
             const pxToMm = px => px / 3.78;
             const canvasHeightMm = pxToMm(canvas.height);
-        
-            // ✅ STEP 3: Slightly shrink the page width (forces printer to scale UP)
-            const pageWidth = 70;  // ⬅️  Try 70mm instead of 80mm
-            const scaleFactor = 80 / pageWidth; // how much it will enlarge
-        
-            console.log(`📏 Page width set to ${pageWidth}mm (content will enlarge ~${Math.round(scaleFactor * 100)}%)`);
         
             const opt = {
               margin: 0,
@@ -148,17 +154,17 @@
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: { 
                 unit: 'mm',
-                format: [pageWidth, canvasHeightMm * (pageWidth / 80)], 
+                format: [80, canvasHeightMm], // ✅ keep 80mm width
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            // ✅ STEP 4: Generate PDF
+            // ✅ STEP 5: GENERATE PDF AS BASE64
             const dataUri = await html2pdf().from(receipt).set(opt).outputPdf('datauristring');
             const base64PDF = dataUri.split(',')[1];
         
-            // ✅ STEP 5: Send to PrintNode
+            // ✅ STEP 6: SEND TO PRINTNODE
             const response = await fetch("https://api.printnode.com/printjobs", {
               method: "POST",
               headers: {
@@ -177,7 +183,7 @@
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "PrintNode request failed");
         
-            alert("✅ Enlarged PDF sent to printer!");
+            alert("✅ Larger PDF sent to printer!");
           } catch (err) {
             console.error("❌ Printing error:", err);
             alert("❌ " + err.message);
