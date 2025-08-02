@@ -121,21 +121,10 @@
         
             const receipt = document.querySelector('.receipt');
 
-            // ✅ Save original styles
-            const originalWidth = receipt.style.width;
-            const originalPos = receipt.style.position;
-            const originalTop = receipt.style.top;
-            const originalLeft = receipt.style.left;
+            // ✅ STEP 1: Oversize for crisp print
+            receipt.style.width = '160mm';   // Bigger for better scale
         
-            // ✅ STEP 1: Oversize width for “bigger capture”
-            receipt.style.width = '160mm';
-        
-            // ✅ STEP 2: Pin to very top-left
-            receipt.style.position = 'absolute';
-            receipt.style.top = '0';
-            receipt.style.left = '0';
-        
-            // ✅ STEP 3: Capture
+            // ✅ STEP 2: Capture receipt
             const canvas = await html2canvas(receipt, { 
               scale: 3,
               useCORS: true,
@@ -145,82 +134,34 @@
               windowHeight: receipt.scrollHeight
             });
         
-            // ✅ STEP 4: Restore styles
-            receipt.style.width = originalWidth || '';
-            receipt.style.position = originalPos;
-            receipt.style.top = originalTop;
-            receipt.style.left = originalLeft;
+            // ✅ STEP 3: Reset back
+            receipt.style.width = '';
         
-            // ✅ (Optional) STEP 5: Trim any leftover transparent space at top
-            const ctx = canvas.getContext('2d');
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let firstNonEmptyRow = 0;
-        
-            for (let y = 0; y < canvas.height; y++) {
-              let rowHasContent = false;
-              for (let x = 0; x < canvas.width; x++) {
-                const alpha = imgData[(y * canvas.width + x) * 4 + 3];
-                if (alpha > 0) {
-                  rowHasContent = true;
-                  break;
-                }
-              }
-              if (rowHasContent) {
-                firstNonEmptyRow = y;
-                break;
-              }
-            }
-        
-            // 🔥 Crop the top transparent pixels
-            const croppedHeight = canvas.height - firstNonEmptyRow;
-            const croppedCanvas = document.createElement('canvas');
-            croppedCanvas.width = canvas.width;
-            croppedCanvas.height = croppedHeight;
-            const croppedCtx = croppedCanvas.getContext('2d');
-            croppedCtx.drawImage(canvas, 0, -firstNonEmptyRow);
-        
-            // ✅ STEP 6: Convert to PDF (true 80mm)
+            // ✅ STEP 4: Convert canvas height to mm
             const pxToMm = px => px / 3.78;
-            const canvasHeightMm = pxToMm(croppedCanvas.height) / 2; // because we doubled width
+            const receiptHeightMm = pxToMm(canvas.height) / 2; // because we doubled width
         
+            console.log(`📏 Receipt height: ${receiptHeightMm.toFixed(1)}mm`);
+        
+            // ✅ STEP 5: Generate PDF
             const opt = {
               margin: 0,
-              filename: 'receipt.pdf',
+              filename: 'TEST-Receipt.pdf',   // ⬅️ Save to file FIRST
               image: { type: 'jpeg', quality: 1.0 },
               html2canvas: { scale: 3, useCORS: true },
               jsPDF: { 
                 unit: 'mm',
-                format: [80, canvasHeightMm],
+                format: [80, receiptHeightMm],  // ✅ Exact height — NO extra pages
                 orientation: 'portrait'
               },
               pagebreak: { mode: ['avoid'] }
             };
         
-            const dataUri = await html2pdf().from(croppedCanvas).set(opt).outputPdf('datauristring');
-            const base64PDF = dataUri.split(',')[1];
-        
-            // ✅ STEP 7: Send to PrintNode
-            const response = await fetch("https://api.printnode.com/printjobs", {
-              method: "POST",
-              headers: {
-                "Authorization": "Basic " + btoa(apiKey + ":"),
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                printerId: printerId,
-                title: "Receipt",
-                contentType: "pdf_base64",
-                content: base64PDF,
-                source: "POS System"
-              })
-            });
-        
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || "PrintNode request failed");
-        
-            alert("✅ Perfect PDF sent to printer — no top gap!");
+            // ✅ STEP 6: Test output FIRST
+            await html2pdf().from(receipt).set(opt).save();  // 💾 SAVES PDF LOCALLY
+            alert("✅ PDF saved — review before printing!");
           } catch (err) {
-            console.error("❌ Printing error:", err);
+            console.error("❌ PDF error:", err);
             alert("❌ " + err.message);
           }
         });
