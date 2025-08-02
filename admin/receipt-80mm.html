@@ -109,21 +109,20 @@
         
             // 🛍 Items
             (saleData.sale_items || []).forEach(item => {
-              console.log("🛒 Item from sale_items:", item); // DEBUG
-              
-              // 🔍 Try multiple name fields safely
-              const name = (item.product_name || item.name || 'UNKNOWN')
-                .padEnd(20)
-                .slice(0, 20);
+              console.log("🛒 Item from sale_items:", item); // ✅ Debug log
+            
+              // ✅ Use name_en for product name
+              const name = (item.name_en || '').padEnd(20).slice(0, 20);
             
               const qty = String(item.quantity ?? 0).padStart(2);
             
-              // 🔍 Try price fields safely
-              const priceValue = item.price ?? item.unit_price ?? item.amount ?? 0;
+              // ✅ Use price_at_sale for price
+              const priceValue = item.price_at_sale ?? 0;
               const price = Number(priceValue).toFixed(2);
             
               encoder.line(`${name} ${qty} x ${price}`);
             });
+
         
             // 💵 Totals
             encoder
