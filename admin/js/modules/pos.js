@@ -595,87 +595,71 @@ function toggleButtonLoading(button, isLoading, originalText) {
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
     
     async function printReceiptViaPrintNode(saleData) {
-        const printBtn = document.getElementById('print-receipt-btn');
-        toggleButtonLoading(printBtn, true, 'Generate Test PDF');
-    
-        // Put receipt data into localStorage for receipt-80mm.html
-        localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
-    
-        // Create hidden iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.left = '-9999px';
-        iframe.style.width = '80mm';
-        iframe.style.border = 'none';
-    
         try {
+            const printBtn = document.getElementById('print-receipt-btn');
+            toggleButtonLoading(printBtn, true, 'Generating PDF...');
+    
+            // Put receipt data into localStorage for receipt-80mm.html
+            localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
+    
+            // Create hidden iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.left = '-9999px';
+            iframe.style.width = '80mm';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+    
+            // Wait for iframe to load
             await new Promise((resolve, reject) => {
-                iframe.onload = async () => {
-                    try {
-                        // Wait for DOM to render
-                        await new Promise(r => setTimeout(r, 1000));
-    
-                        const receiptBody = iframe.contentWindow.document.body;
-    
-                        /* ✅ WAIT for all images (like logo) to load */
-                        const allImages = receiptBody.querySelectorAll('img');
-                        await Promise.all(Array.from(allImages).map(img => {
-                            if (img.complete) return Promise.resolve();
-                            return new Promise(res => {
-                                img.onload = res;
-                                img.onerror = res;
-                            });
-                        }));
-    
-                        /* ✅ Measure content height */
-                        const contentHeightPx = receiptBody.scrollHeight;
-                        const contentHeightMm = contentHeightPx / 3.7795296;
-    
-                        /* ✅ html2pdf options */
-                        const opt = {
-                            margin: 0,
-                            pagebreak: { mode: ['avoid'] },
-                            filename: `TEST-receipt-${saleData.id}.pdf`,
-                            image: { type: 'jpeg', quality: 1.0 },
-                            html2canvas: {
-                               scale: 3,
-                               dpi: 300,
-                               useCORS: true,
-                               scrollX: 0,
-                               scrollY: 0,
-                               windowWidth: 800
-                           },
-                           jsPDF: {
-                               unit: 'mm',
-                               format: [80, contentHeightMm],  // ✅ one tall page
-                               orientation: 'portrait'
-                            }
-                        }).from(receiptBody).toPdf().get('pdf').then(pdf => {
-                           pdf.internal.write(0, 'Tw'); // Forces print styles
-                        });
-    
-                        /* ✅ Generate and save PDF locally for inspection */
-                        await html2pdf().from(receiptBody).set(opt).save();
-    
-                        alert('✅ Test PDF saved! Check your Downloads.');
-                        resolve();
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-    
-                document.body.appendChild(iframe);
+                iframe.onload = resolve;
+                iframe.onerror = reject;
                 iframe.src = 'receipt-80mm.html';
             });
     
-        } catch (error) {
-            console.error('❌ Failed to generate test PDF:', error);
-            alert(`PDF generation failed: ${error.message}`);
+            // Wait a moment for receipt content to render
+            await new Promise(r => setTimeout(r, 1000));
+    
+            const receiptBody = iframe.contentWindow.document.body;
+    
+            // Wait for all images to fully load
+            const images = receiptBody.querySelectorAll('img');
+            await Promise.all([...images].map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(res => { img.onload = res; img.onerror = res; });
+            }));
+    
+            // Measure actual height for correct PDF sizing
+            const contentHeightPx = receiptBody.scrollHeight;
+            const contentHeightMm = contentHeightPx / 3.7795296;
+    
+            // PDF options
+            const opt = {
+                margin: 0,
+                filename: `TEST-receipt-${saleData.id}.pdf`,
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { scale: 3, dpi: 300, useCORS: true },
+                jsPDF: { unit: 'mm', format: [80, contentHeightMm], orientation: 'portrait' },
+                pagebreak: { mode: ['avoid'] }
+            };
+    
+            // Generate & save PDF for testing
+            await html2pdf().from(receiptBody).set(opt).save();
+    
+            alert('✅ Test PDF saved! Check Downloads folder.');
+    
+        } catch (err) {
+            console.error('❌ Printing error:', err);
+            alert('Error while generating PDF: ' + err.message);
         } finally {
-            if (iframe) document.body.removeChild(iframe);
-            toggleButtonLoading(printBtn, false, 'Generate Test PDF');
+            // Cleanup iframe
+            const iframe = document.querySelector('iframe[src="receipt-80mm.html"]');
+            if (iframe) iframe.remove();
+    
+            toggleButtonLoading(printBtn, false, 'Print Small Receipt (80mm)');
         }
     }
+
 
 
 
