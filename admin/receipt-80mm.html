@@ -67,6 +67,7 @@
     <script src="js/i18n.js"></script>
     <script src="js/receipt-80mm.js"></script>
     <script src="js/receipt-printer-encoder.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!--<script>
         document.getElementById('printnode-btn').addEventListener('click', async () => {
           try {
@@ -117,9 +118,9 @@
 <!-- The final, definitive script block for 1:1 printing -->
 <script>
 document.getElementById('printnode-btn').addEventListener('click', async () => {
+    // 1. SETUP THE CAPTURE ENVIRONMENT
     const originalReceipt = document.querySelector('.receipt');
     if (!originalReceipt) {
-        console.error("Could not find the .receipt element.");
         alert("Error: .receipt element not found.");
         return;
     }
@@ -127,48 +128,53 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
     const receiptClone = originalReceipt.cloneNode(true);
     const captureContainer = document.createElement('div');
     
-    // --- THIS IS THE CRITICAL FIX FOR SCALING ---
-    // We set the width to the EXACT target physical width.
-    // No more artificial enlargement like 160mm.
+    // The standard pixel width for an 80mm thermal printer at 203 DPI is 576px.
+    const printerWidthPx = 576;
+
     Object.assign(captureContainer.style, {
         position: 'absolute',
         top: '0',
         left: '0',
         zIndex: '-1',
         opacity: '0',
-        width: '80mm' // Capture at the final print size for a 1:1 scale.
+        width: `${printerWidthPx}px` // Render at the printer's native pixel width
     });
 
     captureContainer.appendChild(receiptClone);
     document.body.appendChild(captureContainer);
     
     try {
+        // 2. CAPTURE THE ELEMENT TO A CANVAS AT NATIVE RESOLUTION
+        const canvas = await html2canvas(receiptClone, {
+            scale: 1, // Use scale 1 because we are already at the target resolution
+            useCORS: true,
+            scrollY: 0,
+        });
+
+        // 3. CREATE A PERFECTLY SIZED PDF DOCUMENT
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        
+        const pdfWidthMm = 80; // The physical paper width
+        // Calculate the height in mm to maintain the aspect ratio of the captured image
+        const pdfHeightMm = (canvas.height * pdfWidthMm) / canvas.width;
+
+        // Create a jsPDF document with the EXACT calculated dimensions
+        const pdf = new jspdf.jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: [pdfWidthMm, pdfHeightMm]
+        });
+
+        // Add the captured image to the PDF, stretching it to fit the page perfectly
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMm, pdfHeightMm);
+        
+        // 4. GET BASE64 AND PREPARE PAYLOAD
+        const dataUri = pdf.output('datauristring');
+        const base64PDF = dataUri.split(',')[1];
+        
         const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
         const printerId = 74589060;
 
-        const opt = {
-            margin: 0,
-            filename: 'receipt.pdf',
-            image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: {
-                // A scale of 2 or 3 is still good for capturing a high-quality
-                // image, resulting in sharper text on the final print.
-                scale: 3, 
-                useCORS: true,
-                scrollY: 0,
-            },
-            jsPDF: {
-                unit: 'mm',
-                // The 'format' property is correctly removed to prevent the crash.
-                // html2pdf will now correctly infer the page size from the
-                // source element's 80mm width.
-                orientation: 'portrait'
-            }
-        };
-
-        const dataUri = await html2pdf().from(receiptClone).set(opt).outputPdf('datauristring');
-        const base64PDF = dataUri.split(',')[1];
-        
         const printNodePayload = {
             printerId: printerId,
             title: "Receipt",
@@ -176,10 +182,11 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
             content: base64PDF,
             source: "POS System",
             options: {
-                "fit_to_page": false // This remains essential
+                "fit_to_page": false // This is still essential
             }
         };
         
+        // 5. SEND TO PRINTNODE
         const response = await fetch("https://api.printnode.com/printjobs", {
             method: "POST",
             headers: {
@@ -198,6 +205,7 @@ document.getElementById('printnode-btn').addEventListener('click', async () => {
         console.error("❌ Printing error:", err);
         alert("❌ " + err.message);
     } finally {
+        // 6. CLEAN UP
         document.body.removeChild(captureContainer);
     }
 });
