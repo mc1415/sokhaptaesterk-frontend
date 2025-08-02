@@ -1,4 +1,4 @@
-/* frontend/admin/css/receipt-80mm.css */
+/* ====== RECEIPT LAYOUT ====== */
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700;900&family=Poppins:wght@400;600&family=Moul&display=swap');
 
@@ -9,17 +9,18 @@ body {
     padding: 1rem;
     color: #000;
 }
+
 .receipt {
-  width: 80mm;
-  background: #fff;
-  padding: 0;       /* 👈 remove for print clean edge */
-  margin: 0 auto;
-  box-shadow: none; /* 👈 no shadow in print */
+    width: 80mm;             /* ✅ Match thermal paper width */
+    background: #fff;
+    padding: 5mm;
+    margin: 0 auto;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
 }
 
 .receipt-header { text-align: center; margin-bottom: 10px; }
 .logo {
-    width: 50px; /* Smaller logo so it doesn't dominate the ticket */
+    width: 50px;
     margin-bottom: 5px;
 }
 .store-name { font-family: Moul; font-size: 1.1em; margin: 0; }
@@ -40,6 +41,8 @@ body {
 
 .receipt-footer { text-align: center; margin-top: 15px; border-top: 1px dashed #000; padding-top: 10px; font-size: 0.9em; }
 .receipt-footer p { margin: 2px 0; }
+
+/* ====== PRINT MODE ====== */
 @media print {
   body {
     margin: 0;
@@ -47,15 +50,17 @@ body {
     background: white !important;
     color: black !important;
   }
+
   .receipt {
-    width: 80mm;
     box-shadow: none;
     margin: 0;
     padding: 0;
-    display: block !important; /* ✅ force visibility */
+    width: 80mm;
+    display: block !important;  /* ✅ force visible */
   }
+
   @page {
-    size: 80mm auto;
+    size: 80mm auto;  /* ✅ true thermal width */
     margin: 0;
   }
 }
