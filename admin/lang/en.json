@@ -27,7 +27,7 @@
   "exchange_rates": "Exchange Rates",
   "exchange_rates_desc": "Set the conversion rates relative to your base currency (USD).",
   "base_currency_label": "Base Currency ({code})",
-  "currency_rate_label": "1 {code} = ? {baseCode}",
+  "currency_rate_label": "1 {baseCode} = ? {code}",
   "base_currency_note": "Rate is always 1.0",
   "save_rates_btn": "Save Rates",
 

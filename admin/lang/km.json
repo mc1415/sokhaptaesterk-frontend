@@ -27,7 +27,7 @@
   "exchange_rates": "អត្រាប្តូរប្រាក់ថ្ងៃនេះ",
   "exchange_rates_desc": "កំណត់អត្រាប្តូរប្រាក់ធៀបនឹងលុយដុល្លារ (USD)។",
   "base_currency_label": "រូបិយប័ណ្ណគោល ({code})",
-  "currency_rate_label": "១ {code} = ? {baseCode}",
+  "currency_rate_label": "១ {baseCode} = ? {code}",
   "base_currency_note": "អត្រាគឺ 1.0 ជានិច្ច",
   "save_rates_btn": "រក្សាទុក",
 

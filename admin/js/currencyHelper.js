@@ -15,7 +15,8 @@ window.currencyInitializationPromise = (async () => {
             currenciesObject[currency.code] = {
                 symbol: currency.symbol,
                 name: currency.name,
-                rate_to_base: currency.rate_to_base
+                // Number of units of this currency per 1 USD
+                rate_from_base: currency.rate_from_base
             };
         });
         
@@ -26,8 +27,8 @@ window.currencyInitializationPromise = (async () => {
         console.error("❌ Failed to initialize currency system:", error);
         // Provide a safe fallback so the app doesn't crash if the API fails.
         window.AppCurrencies = {
-            'USD': { symbol: '$', rate_to_base: 1.0, name: 'US Dollar' },
-            'KHR': { symbol: '៛', rate_to_base: 4100, name: 'Cambodian Riel' }
+            'USD': { symbol: '$', rate_from_base: 1.0, name: 'US Dollar' },
+            'KHR': { symbol: '៛', rate_from_base: 4100, name: 'Cambodian Riel' }
         };
     }
 })();
@@ -70,8 +71,8 @@ function formatPrice(basePrice, targetCurrencyCode) {
     }
 
     // 2. Perform the conversion using the correct rate from the database.
-    // To go FROM the base currency (USD) TO another currency, we DIVIDE.
-    const convertedPrice = basePrice / currencyInfo.rate_to_base;
+    // Rates represent how much of the target currency equals 1 USD, so multiply.
+    const convertedPrice = basePrice * currencyInfo.rate_from_base;
     const symbol = currencyInfo.symbol;
 
     // 3. Apply special formatting rules based on the currency code.
