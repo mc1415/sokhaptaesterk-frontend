@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const summarySubtotal = document.getElementById('summary-subtotal');
     const summaryTax = document.getElementById('summary-tax');
     const summaryTotal = document.getElementById('summary-total');
-    const summaryTotalUsd = document.getElementById('summary-total-usd');
+    const summaryTotalKhr = document.getElementById('summary-total-khr'); // Changed from Usd to Khr
     const paymentTotalDue = document.getElementById('payment-total-due');
-    const paymentTotalDueUsd = document.getElementById('payment-total-due-usd');
+    const paymentTotalDueKhr = document.getElementById('payment-total-due-khr'); // Changed from Usd to Khr
 
     // At the top, in the element selections area, add the new modal selectors
     const postSaleModal = document.getElementById('post-sale-modal');
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="product-tile-info">
                     <p class="product-tile-name">${productName}</p>
-                    <p class="product-tile-price">${formatPrice(product.selling_price, 'KHR')}</p>
+                    <p class="product-tile-price">${formatPrice(product.selling_price, 'USD')}</p> <!-- Changed to USD -->
                 </div>
             `;
             
@@ -174,14 +174,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cartItemElement.innerHTML = `
                     <div class="cart-item-details">
                         <span class="cart-item-name">${productName}</span>
-                        <span class="cart-item-price">${formatPrice(item.selling_price, 'KHR')}</span>
+                        <span class="cart-item-price">${formatPrice(item.selling_price, 'USD')}</span> <!-- Changed to USD -->
                     </div>
                     <div class="cart-item-actions">
                         <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
                         <span class="cart-item-quantity">${item.quantity}</span>
                         <button class="quantity-btn increase-btn" data-id="${item.id}">+</button>
                     </div>
-                    <span class="cart-item-total">${formatPrice(itemTotal, 'KHR')}</span>
+                    <span class="cart-item-total">${formatPrice(itemTotal, 'USD')}</span> <!-- Changed to USD -->
                 `;
                 cartItemsContainer.appendChild(cartItemElement);
             });
@@ -195,17 +195,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const total = subtotal + tax;
         
         // These elements are always visible, so they are probably safe.
-        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'KHR');
-        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'KHR');
-        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'KHR');
-        if (summaryTotalUsd) summaryTotalUsd.textContent = formatPrice(total, 'USD');
+        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'USD'); // Changed to USD
+        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'USD'); // Changed to USD
+        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'USD'); // Changed to USD
+        if (summaryTotalKhr) summaryTotalKhr.textContent = formatPrice(total, 'KHR'); // Changed to KHR
         
         // THE FIX: These elements are inside a modal. Only update them if they exist.
         if (paymentTotalDue) {
-            paymentTotalDue.textContent = formatPrice(total, 'KHR');
+            paymentTotalDue.textContent = formatPrice(total, 'USD'); // Changed to USD
         }
-        if (paymentTotalDueUsd) {
-            paymentTotalDueUsd.textContent = formatPrice(total, 'USD');
+        if (paymentTotalDueKhr) {
+            paymentTotalDueKhr.textContent = formatPrice(total, 'KHR'); // Changed to KHR
         }
     }
 
@@ -225,11 +225,11 @@ async function processSale(paymentMethod) {
         toggleButtonLoading(confirmPaymentBtn, true, 'Confirm Payment & New Sale');
     }
 
-    const totalAmount = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+    const totalAmount = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0); // This is in USD now
     const saleItemsPayload = cart.map(item => ({
         product_id: item.id,
         quantity: item.quantity,
-        price_at_sale: item.selling_price
+        price_at_sale: item.selling_price // This is in USD now
     }));
 
     try {
@@ -238,7 +238,7 @@ async function processSale(paymentMethod) {
             body: JSON.stringify({
                 warehouse_id: 'c451f784-5f1d-4b86-823d-1e75660a6b6d',
                 sale_items: saleItemsPayload,
-                total_amount: totalAmount,
+                total_amount: totalAmount, // This is in USD now
                 payment_method: paymentMethod
             })
         });
@@ -299,18 +299,19 @@ async function generateAndShowQrCode() {
     // --- START OF THE FIX ---
 
     // 2. Prepare data for QR generation (with new dynamic rates)
-    const totalAmountInKHR = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+    const totalAmountInUSD = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0); // Already in USD
     const tran_id = `SALE-${Date.now()}`;
 
-    // 2c. Convert the total amount from KHR to USD using dynamic rates.
-    const usdRate = window.AppCurrencies['USD'] ? window.AppCurrencies['USD'].rate_to_base : 4000;
-    const amountInUSD = (totalAmountInKHR / usdRate).toFixed(2);
+    // 2c. Convert the total amount from USD to KHR using dynamic rates.
+    // Assuming AppCurrencies['KHR'] holds the rate relative to the base currency (USD).
+    const khrRate = window.AppCurrencies['KHR'] ? window.AppCurrencies['KHR'].rate_to_base : 4000; 
+    const amountInKHR = (totalAmountInUSD * khrRate).toFixed(0); // Convert to KHR, no decimals
 
-    // 2d. Prepare each item for the payload in USD.
+    // 2d. Prepare each item for the payload in KHR.
     const itemsArray = cart.map(item => ({
         name: item.name_en,
         quantity: parseInt(item.quantity),
-        price: parseFloat((item.selling_price / usdRate).toFixed(2))
+        price: parseFloat((item.selling_price * khrRate).toFixed(0)) // Convert item price to KHR
     }));
 
     // --- END OF THE FIX ---
@@ -319,7 +320,8 @@ async function generateAndShowQrCode() {
     // Assuming toBase64 is a function you have defined elsewhere
     const itemsBase64 = toBase64(itemsJsonString); 
 
-    const payload = { tran_id, amount: amountInUSD, items_base64: itemsBase64 };
+    // The ABA QR code generation expects KHR as the amount.
+    const payload = { tran_id, amount: amountInKHR, items_base64: itemsBase64 };
 
     // 3. Call backend to get QR code (no changes here)
     try {
@@ -398,11 +400,11 @@ async function completeSale(paymentMethodOverride = null) {
     
     toggleButtonLoading(confirmPaymentBtn, true, 'Confirm Payment & New Sale');
 
-    const totalAmount = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+    const totalAmount = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0); // This is in USD now
     const saleItemsPayload = cart.map(item => ({
         product_id: item.id,
         quantity: item.quantity,
-        price_at_sale: item.selling_price
+        price_at_sale: item.selling_price // This is in USD now
     }));
 
     try {
@@ -412,7 +414,7 @@ async function completeSale(paymentMethodOverride = null) {
                 warehouse_id: 'c451f784-5f1d-4b86-823d-1e75660a6b6d', // This should probably be dynamic
                 user_id: user.id,
                 sale_items: saleItemsPayload,
-                total_amount: totalAmount,
+                total_amount: totalAmount, // This is in USD now
                 // --- MODIFICATION ---
                 // This now sends the correct method: 'cash' or 'manual_qr_override'
                 payment_method: paymentMethod
