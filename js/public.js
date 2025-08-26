@@ -59,8 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- THIS IS THE KEY FIX ---
         // Select the new span elements by their ID inside the cloned card
         const currentPriceEl = card.querySelector('.current-price');
-    // Format the price using the helper, hardcoded to 'THB'
-        currentPriceEl.textContent = formatPrice(product.selling_price, 'THB');
+        // Format the price using the helper, now in USD
+        currentPriceEl.textContent = formatPrice(product.selling_price, 'USD');
         
         card.querySelector('.card-image').src = product.image_url || 'https://via.placeholder.com/300x300.png?text=No+Image';
         card.querySelector('.product-name').textContent = product.name_en;
