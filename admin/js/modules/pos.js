@@ -32,9 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const summarySubtotal = document.getElementById('summary-subtotal');
     const summaryTax = document.getElementById('summary-tax');
     const summaryTotal = document.getElementById('summary-total');
-    const summaryTotalUsd = document.getElementById('summary-total-usd');
+    const summaryTotalKhr = document.getElementById('summary-total-khr');
     const paymentTotalDue = document.getElementById('payment-total-due');
-    const paymentTotalDueUsd = document.getElementById('payment-total-due-usd');
+    const paymentTotalDueKhr = document.getElementById('payment-total-due-khr');
 
     // At the top, in the element selections area, add the new modal selectors
     const postSaleModal = document.getElementById('post-sale-modal');
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="product-tile-info">
                     <p class="product-tile-name">${productName}</p>
-                    <p class="product-tile-price">${formatPrice(product.selling_price, 'THB')}</p>
+                    <p class="product-tile-price">${formatPrice(product.selling_price, 'USD')}</p>
                 </div>
             `;
             
@@ -164,14 +164,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cartItemElement.innerHTML = `
                     <div class="cart-item-details">
                         <span class="cart-item-name">${productName}</span>
-                        <span class="cart-item-price">${formatPrice(item.selling_price, 'THB')}</span>
+                        <span class="cart-item-price">${formatPrice(item.selling_price, 'USD')}</span>
                     </div>
                     <div class="cart-item-actions">
                         <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
                         <span class="cart-item-quantity">${item.quantity}</span>
                         <button class="quantity-btn increase-btn" data-id="${item.id}">+</button>
                     </div>
-                    <span class="cart-item-total">${formatPrice(itemTotal, 'THB')}</span>
+                    <span class="cart-item-total">${formatPrice(itemTotal, 'USD')}</span>
                 `;
                 cartItemsContainer.appendChild(cartItemElement);
             });
@@ -185,17 +185,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const total = subtotal + tax;
         
         // These elements are always visible, so they are probably safe.
-        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'THB');
-        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'THB');
-        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'THB');
-        if (summaryTotalUsd) summaryTotalUsd.textContent = formatPrice(total, 'USD'); 
+        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'USD');
+        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'USD');
+        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'USD');
+        if (summaryTotalKhr) summaryTotalKhr.textContent = formatPrice(total, 'KHR');
         
         // THE FIX: These elements are inside a modal. Only update them if they exist.
         if (paymentTotalDue) {
-            paymentTotalDue.textContent = formatPrice(total, 'THB');
+            paymentTotalDue.textContent = formatPrice(total, 'USD');
         }
-        if (paymentTotalDueUsd) {
-            paymentTotalDueUsd.textContent = formatPrice(total, 'USD');
+        if (paymentTotalDueKhr) {
+            paymentTotalDueKhr.textContent = formatPrice(total, 'KHR');
         }
     }
 
@@ -289,26 +289,13 @@ async function generateAndShowQrCode() {
     // --- START OF THE FIX ---
 
     // 2. Prepare data for QR generation (with new dynamic rates)
-    const totalAmountInTHB = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+    const totalAmountInUSD = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
     const tran_id = `SALE-${Date.now()}`;
 
-    // 2a. Get the USD exchange rate from our global currency object.
-    const usdRate = window.AppCurrencies.USD?.rate_to_base;
-
-    // 2b. Add a safety check. If the rate isn't loaded, stop the function.
-    if (!usdRate) {
-        qrDisplayArea.innerHTML = `<p style="color:red; font-weight: bold;">Error: USD exchange rate not loaded. Cannot generate QR code.</p>`;
-        return; // Stop execution
-    }
-
-    // 2c. Perform the correct conversion for the total amount.
-    const amountInUSD = (totalAmountInTHB / usdRate).toFixed(2);
-    
-    // 2d. Perform the correct conversion for each item in the cart.
     const itemsArray = cart.map(item => ({
         name: item.name_en,
         quantity: parseInt(item.quantity),
-        price: parseFloat((item.selling_price / usdRate).toFixed(2)) // Use division here as well
+        price: parseFloat(item.selling_price.toFixed(2))
     }));
 
     // --- END OF THE FIX ---
@@ -317,7 +304,7 @@ async function generateAndShowQrCode() {
     // Assuming toBase64 is a function you have defined elsewhere
     const itemsBase64 = toBase64(itemsJsonString); 
 
-    const payload = { tran_id, amount: amountInUSD, items_base64: itemsBase64 };
+    const payload = { tran_id, amount: totalAmountInUSD.toFixed(2), items_base64: itemsBase64 };
 
     // 3. Call backend to get QR code (no changes here)
     try {

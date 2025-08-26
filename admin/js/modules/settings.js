@@ -21,14 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
             exchangeRateInputsContainer.innerHTML = ''; 
 
             // Find the base currency to use in labels
-            const baseCurrencyCode = 'THB'; 
+            const baseCurrencyCode = 'USD';
 
             rates.forEach(currency => {
                 const formGroup = document.createElement('div');
                 formGroup.className = 'form-group';
                 
                 let labelText = '';
-                let inputValue = currency.rate_to_base;
+                let inputValue = currency.rate_from_base;
                 let isDisabled = false;
 
                 if (currency.code === baseCurrencyCode) {
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     isDisabled = true;
                 } else {
                     // This is for all other currencies
-                    labelText = `1 ${currency.code} = ? ${baseCurrencyCode}`;
+                    labelText = `1 ${baseCurrencyCode} = ? ${currency.code}`;
                 }
 
                 formGroup.innerHTML = `
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         code: fullCurrencyData.code,
                         name: fullCurrencyData.name,     // <-- Include the name
                         symbol: fullCurrencyData.symbol, // <-- Include the symbol
-                        rate_to_base: parseFloat(input.value)
+                        rate_from_base: parseFloat(input.value)
                     });
                 }
             }
