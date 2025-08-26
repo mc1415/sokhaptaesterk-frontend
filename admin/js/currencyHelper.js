@@ -15,8 +15,7 @@ window.currencyInitializationPromise = (async () => {
             currenciesObject[currency.code] = {
                 symbol: currency.symbol,
                 name: currency.name,
-                // Number of units of this currency per 1 USD
-                rate_from_base: currency.rate_from_base
+                rate_to_base: currency.rate_to_base
             };
         });
         
@@ -27,8 +26,8 @@ window.currencyInitializationPromise = (async () => {
         console.error("❌ Failed to initialize currency system:", error);
         // Provide a safe fallback so the app doesn't crash if the API fails.
         window.AppCurrencies = {
-            'USD': { symbol: '$', rate_from_base: 1.0, name: 'US Dollar' },
-            'KHR': { symbol: '៛', rate_from_base: 4100, name: 'Cambodian Riel' }
+            'KHR': { symbol: '៛', rate_to_base: 1.0, name: 'Cambodian Riel' },
+            'USD': { symbol: '$', rate_to_base: 4000, name: 'US Dollar' }
         };
     }
 })();
@@ -40,7 +39,7 @@ window.currencyInitializationPromise = (async () => {
  */
 function getCurrentCurrency() {
     // This assumes AppConfig exists and has BASE_CURRENCY defined.
-    return localStorage.getItem('userCurrency') || (window.AppConfig ? AppConfig.BASE_CURRENCY : 'USD');
+    return localStorage.getItem('userCurrency') || (window.AppConfig ? AppConfig.BASE_CURRENCY : 'KHR');
 }
 
 /**
@@ -56,23 +55,23 @@ function setCurrency(currencyCode) {
 }
 
 /**
- * Formats a price from the base currency (USD) into the target currency.
+ * Formats a price from the base currency (KHR) into the target currency.
  * This is a synchronous function that assumes the currency data has already been loaded.
- * @param {number} basePrice The price in USD.
+ * @param {number} basePrice The price in KHR.
  * @param {string} targetCurrencyCode The currency code to format into (e.g., 'USD').
- * @returns {string} The formatted price string (e.g., "$3,200", "៛370,000").
+ * @returns {string} The formatted price string (e.g., "$92.50", "៛3,200").
  */
 function formatPrice(basePrice, targetCurrencyCode) {
     // 1. Safety check: Ensure the target currency data exists.
     const currencyInfo = window.AppCurrencies[targetCurrencyCode];
     if (!currencyInfo) {
         console.warn(`formatPrice: Info for ${targetCurrencyCode} not found in AppCurrencies. Using fallback.`);
-        return `${basePrice.toLocaleString()} USD`; // A safe fallback
+        return `${basePrice.toLocaleString()} KHR`; // A safe fallback
     }
 
     // 2. Perform the conversion using the correct rate from the database.
-    // Rates represent how much of the target currency equals 1 USD, so multiply.
-    const convertedPrice = basePrice * currencyInfo.rate_from_base;
+    // To go FROM the base currency (KHR) TO another currency, we DIVIDE.
+    const convertedPrice = basePrice / currencyInfo.rate_to_base;
     const symbol = currencyInfo.symbol;
 
     // 3. Apply special formatting rules based on the currency code.
@@ -82,7 +81,7 @@ function formatPrice(basePrice, targetCurrencyCode) {
         return `${symbol}${convertedPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
     }
     
-    // For all other currencies (like USD, KHR, etc.), format to 2 decimal places.
+    // For all other currencies (like USD), format to 2 decimal places.
     // This is a good general rule for most currencies.
     return `${symbol}${convertedPrice.toFixed(2)}`;
 }
