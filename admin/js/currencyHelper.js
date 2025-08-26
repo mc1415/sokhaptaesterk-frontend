@@ -26,8 +26,8 @@ window.currencyInitializationPromise = (async () => {
         console.error("❌ Failed to initialize currency system:", error);
         // Provide a safe fallback so the app doesn't crash if the API fails.
         window.AppCurrencies = {
-            'KHR': { symbol: '៛', rate_to_base: 1.0, name: 'Cambodian Riel' },
-            'USD': { symbol: '$', rate_to_base: 4000, name: 'US Dollar' }
+            'KHR': { symbol: '៛', rate_to_base: 4000, name: 'Cambodian Riel' },
+            'USD': { symbol: '$', rate_to_base: 1, name: 'US Dollar' }
         };
     }
 })();
