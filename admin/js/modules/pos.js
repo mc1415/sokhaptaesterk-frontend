@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cancelSaleBtn = document.getElementById('cancel-sale-btn');
     const userNameSpan = document.getElementById('user-name');
     const searchInput = document.getElementById('product-search');
+    const barcodeSearchBtn = document.getElementById('barcode-search-btn');
+    const defaultSearchPlaceholder = searchInput.placeholder;
+    let isBarcodeMode = false;
     
     // Modal Elements
     const paymentModal = document.getElementById('payment-modal');
@@ -32,9 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const summarySubtotal = document.getElementById('summary-subtotal');
     const summaryTax = document.getElementById('summary-tax');
     const summaryTotal = document.getElementById('summary-total');
-    const summaryTotalKhr = document.getElementById('summary-total-khr');
+    const summaryTotalUsd = document.getElementById('summary-total-usd');
     const paymentTotalDue = document.getElementById('payment-total-due');
-    const paymentTotalDueKhr = document.getElementById('payment-total-due-khr');
+    const paymentTotalDueUsd = document.getElementById('payment-total-due-usd');
 
     // At the top, in the element selections area, add the new modal selectors
     const postSaleModal = document.getElementById('post-sale-modal');
@@ -60,8 +63,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function fetchAndRenderInitialData() {
         try {
             productGrid.innerHTML = `<p>Loading products...</p>`;
-            const products = await apiFetch('/products'); // This should be your admin endpoint
+            // THE FIX: Add the 'Range' header to fetch up to 2000 products,
+            // overriding the API's default limit of 1000.
+            const products = await apiFetch('/products', {
+                headers: {
+                    'Range': '0-1999'
+                }
+            });
             productCache = products || [];
+            window.productCache = productCache;
             renderProducts();
         } catch (error) {
             productGrid.innerHTML = `<p style="color:red; text-align:center;">Could not load products. (${error.message})</p>`;
@@ -97,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="product-tile-info">
                     <p class="product-tile-name">${productName}</p>
-                    <p class="product-tile-price">${formatPrice(product.selling_price, 'USD')}</p>
+                    <p class="product-tile-price">${formatPrice(product.selling_price, 'KHR')}</p>
                 </div>
             `;
             
@@ -164,14 +174,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cartItemElement.innerHTML = `
                     <div class="cart-item-details">
                         <span class="cart-item-name">${productName}</span>
-                        <span class="cart-item-price">${formatPrice(item.selling_price, 'USD')}</span>
+                        <span class="cart-item-price">${formatPrice(item.selling_price, 'KHR')}</span>
                     </div>
                     <div class="cart-item-actions">
                         <button class="quantity-btn decrease-btn" data-id="${item.id}">-</button>
                         <span class="cart-item-quantity">${item.quantity}</span>
                         <button class="quantity-btn increase-btn" data-id="${item.id}">+</button>
                     </div>
-                    <span class="cart-item-total">${formatPrice(itemTotal, 'USD')}</span>
+                    <span class="cart-item-total">${formatPrice(itemTotal, 'KHR')}</span>
                 `;
                 cartItemsContainer.appendChild(cartItemElement);
             });
@@ -185,17 +195,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const total = subtotal + tax;
         
         // These elements are always visible, so they are probably safe.
-        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'USD');
-        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'USD');
-        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'USD');
-        if (summaryTotalKhr) summaryTotalKhr.textContent = formatPrice(total, 'KHR');
+        if (summarySubtotal) summarySubtotal.textContent = formatPrice(subtotal, 'KHR');
+        if (summaryTax) summaryTax.textContent = formatPrice(tax, 'KHR');
+        if (summaryTotal) summaryTotal.textContent = formatPrice(total, 'KHR');
+        if (summaryTotalUsd) summaryTotalUsd.textContent = formatPrice(total, 'USD');
         
         // THE FIX: These elements are inside a modal. Only update them if they exist.
         if (paymentTotalDue) {
-            paymentTotalDue.textContent = formatPrice(total, 'USD');
+            paymentTotalDue.textContent = formatPrice(total, 'KHR');
         }
-        if (paymentTotalDueKhr) {
-            paymentTotalDueKhr.textContent = formatPrice(total, 'KHR');
+        if (paymentTotalDueUsd) {
+            paymentTotalDueUsd.textContent = formatPrice(total, 'USD');
         }
     }
 
@@ -289,13 +299,18 @@ async function generateAndShowQrCode() {
     // --- START OF THE FIX ---
 
     // 2. Prepare data for QR generation (with new dynamic rates)
-    const totalAmountInUSD = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
+    const totalAmountInKHR = cart.reduce((acc, item) => acc + (item.selling_price * item.quantity), 0);
     const tran_id = `SALE-${Date.now()}`;
 
+    // 2c. Convert the total amount from KHR to USD using dynamic rates.
+    const usdRate = window.AppCurrencies['USD'] ? window.AppCurrencies['USD'].rate_to_base : 4000;
+    const amountInUSD = (totalAmountInKHR / usdRate).toFixed(2);
+
+    // 2d. Prepare each item for the payload in USD.
     const itemsArray = cart.map(item => ({
         name: item.name_en,
         quantity: parseInt(item.quantity),
-        price: parseFloat(item.selling_price.toFixed(2))
+        price: parseFloat((item.selling_price / usdRate).toFixed(2))
     }));
 
     // --- END OF THE FIX ---
@@ -304,7 +319,7 @@ async function generateAndShowQrCode() {
     // Assuming toBase64 is a function you have defined elsewhere
     const itemsBase64 = toBase64(itemsJsonString); 
 
-    const payload = { tran_id, amount: totalAmountInUSD.toFixed(2), items_base64: itemsBase64 };
+    const payload = { tran_id, amount: amountInUSD, items_base64: itemsBase64 };
 
     // 3. Call backend to get QR code (no changes here)
     try {
@@ -419,28 +434,6 @@ async function completeSale(paymentMethodOverride = null) {
     }
 }
 
-async function printWithPrintNode(base64Content) {
-    const apiKey = "fuTUtDy28kvT6oNf3V84ip-nc6P_yltRzI7Iogmf2qk";
-    const printerId = 74589060; // Replace with your printer ID
-
-    const response = await fetch("https://api.printnode.com/printjobs", {
-        method: "POST",
-        headers: {
-            "Authorization": "Basic " + btoa(apiKey + ":"),
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            printerId: printerId,
-            title: "POS Receipt",
-            contentType: "pdf_base64",
-            content: base64Content,
-            source: "My POS System"
-        })
-    });
-
-    const data = await response.json();
-    console.log("Print job sent:", data);
-}
 
 // This event listener needs to be updated to cancel the timer if the user closes the modal
 document.querySelector('#qr-code-modal .close-btn').addEventListener('click', () => {
@@ -477,6 +470,30 @@ function toggleButtonLoading(button, isLoading, originalText) {
 
     // --- 6. SETUP EVENT LISTENERS ---
     searchInput.addEventListener('input', renderProducts);
+    barcodeSearchBtn.addEventListener('click', () => {
+        if (isBarcodeMode) {
+            isBarcodeMode = false;
+            searchInput.value = '';
+            searchInput.placeholder = defaultSearchPlaceholder;
+        } else {
+            isBarcodeMode = true;
+            searchInput.value = '';
+            searchInput.placeholder = 'Scan or enter barcode';
+            searchInput.focus();
+        }
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (isBarcodeMode && e.key === 'Enter') {
+            const code = searchInput.value.trim();
+            const product = productCache.find(p => (p.barcode && p.barcode === code) || (p.sku && p.sku === code));
+            if (product) {
+                addToCart(product.id);
+            }
+            searchInput.value = '';
+            searchInput.focus();
+        }
+    });
     
     cartItemsContainer.addEventListener('click', (e) => {
         const target = e.target.closest('.quantity-btn'); // More robust event delegation
@@ -518,12 +535,8 @@ function toggleButtonLoading(button, isLoading, originalText) {
 
     printReceiptBtn.addEventListener('click', () => {
         if (!lastCompletedSale) return;
-    
-        // ✅ Store the sale in localStorage
         localStorage.setItem('currentReceiptData', JSON.stringify(lastCompletedSale));
-    
-        // ✅ Redirect to the receipt page
-        window.location.href = 'receipt-80mm.html';
+        window.open('receipt-80mm.html', '_blank');
     });
 
     // Close modal if user clicks outside of it
@@ -581,71 +594,11 @@ function toggleButtonLoading(button, isLoading, originalText) {
         document.removeEventListener('touchmove', onMouseMove);
         document.removeEventListener('touchend', onMouseUp);
     };
+    
+    
 
     resizer.addEventListener('mousedown', onMouseDown);
     resizer.addEventListener('touchstart', onMouseDown); // Add touch support
-    
-    /** async function printReceiptViaPrintNode(saleData) {
-        try {
-            const printBtn = document.getElementById('print-receipt-btn');
-            toggleButtonLoading(printBtn, true, 'Generating PDF...');
-    
-            // Store sale data for receipt page
-            localStorage.setItem('currentReceiptData', JSON.stringify(saleData));
-    
-            // Create hidden iframe
-            const iframe = document.createElement('iframe');
-            iframe.style.position = 'absolute';
-            iframe.style.left = '-9999px';
-            iframe.src = 'receipt-80mm.html';
-            document.body.appendChild(iframe);
-    
-            await new Promise(resolve => iframe.onload = resolve);
-            await new Promise(r => setTimeout(r, 1000)); // wait for content to render
-    
-            const receiptBody = iframe.contentWindow.document.body;
-    
-            // Wait for all images to load (important for logo)
-            const imgs = receiptBody.querySelectorAll('img');
-            await Promise.all([...imgs].map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(res => { img.onload = res; img.onerror = res; });
-            }));
-    
-            // ✅ CAPTURE the entire receipt as ONE IMAGE
-            const canvas = await html2canvas(receiptBody, { scale: 3, useCORS: true });
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-    
-            // ✅ CALCULATE correct PDF size
-            const imgWidthMm = 80; // width fixed for thermal
-            const imgHeightMm = (canvas.height / canvas.width) * imgWidthMm;
-    
-            // ✅ CREATE single-page PDF with just the image
-            const pdf = new jspdf.jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [imgWidthMm, imgHeightMm]
-            });
-    
-            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidthMm, imgHeightMm);
-    
-            // ✅ SAVE PDF for testing (later we’ll send base64 to PrintNode)
-            pdf.save(`TEST-receipt-${saleData.id}.pdf`);
-    
-            alert('✅ Test PDF saved! Check Downloads.');
-        } catch (err) {
-            console.error('❌ Print error:', err);
-            alert('Error while generating receipt: ' + err.message);
-        } finally {
-            // Cleanup iframe
-            const iframe = document.querySelector('iframe[src="receipt-80mm.html"]');
-            if (iframe) iframe.remove();
-            toggleButtonLoading(printBtn, false, 'Print Small Receipt (80mm)');
-        }
-    } **/
-
-
-
 
     // --- 7. INITIAL DATA LOAD ---
     fetchAndRenderInitialData();
