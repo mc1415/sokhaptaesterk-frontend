@@ -61,28 +61,45 @@ function setCurrency(currencyCode) {
  * @param {string} targetCurrencyCode The currency code to format into (e.g., 'USD').
  * @returns {string} The formatted price string (e.g., "$92.50", "៛3,200").
  */
-function formatPrice(basePrice, targetCurrencyCode) {
+/**
+ * Formats a price from the base currency (USD, as per AppConfig.BASE_CURRENCY)
+ * into the target currency.
+ * This is a synchronous function that assumes the currency data has already been loaded.
+ * @param {number} amountInBaseCurrency The price in the application's BASE_CURRENCY (e.g., USD).
+ * @param {string} targetCurrencyCode The currency code to format into (e.g., 'KHR').
+ * @returns {string} The formatted price string (e.g., "$5.00", "៛20,000").
+ */
+function formatPrice(amountInBaseCurrency, targetCurrencyCode) {
+    const baseCurrencyCode = window.AppConfig.BASE_CURRENCY; // Get the defined base currency
+
     // 1. Safety check: Ensure the target currency data exists.
     const currencyInfo = window.AppCurrencies[targetCurrencyCode];
     if (!currencyInfo) {
         console.warn(`formatPrice: Info for ${targetCurrencyCode} not found in AppCurrencies. Using fallback.`);
-        return `${basePrice.toLocaleString()} KHR`; // A safe fallback
+        // Fallback to displaying in the base currency if target currency info is missing.
+        return `${window.AppCurrencies[baseCurrencyCode]?.symbol || ''}${amountInBaseCurrency.toFixed(2)}`;
     }
 
-    // 2. Perform the conversion using the correct rate from the database.
-    // To go FROM the base currency (KHR) TO another currency, we DIVIDE.
-    const convertedPrice = basePrice / currencyInfo.rate_to_base;
+    let convertedPrice;
+    if (targetCurrencyCode === baseCurrencyCode) {
+        // If the target currency is the same as the base currency, no conversion needed
+        convertedPrice = amountInBaseCurrency;
+    } else {
+        // Convert from the application's BASE_CURRENCY to the target currency
+        // The rate_to_base defines how many units of the target currency equal 1 unit of the base currency.
+        // So, amountInBaseCurrency * rate_to_base gives the amount in the target currency.
+        convertedPrice = amountInBaseCurrency * currencyInfo.rate_to_base;
+    }
+    
     const symbol = currencyInfo.symbol;
 
     // 3. Apply special formatting rules based on the currency code.
-
-    // For KHR, we typically don't want decimal places.
     if (targetCurrencyCode === 'KHR') {
-        return `${symbol}${convertedPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+        // KHR typically no decimal places.
+        return `${symbol}${Math.round(convertedPrice).toLocaleString('en-US')}`;
     }
     
     // For all other currencies (like USD), format to 2 decimal places.
-    // This is a good general rule for most currencies.
     return `${symbol}${convertedPrice.toFixed(2)}`;
 }
 
