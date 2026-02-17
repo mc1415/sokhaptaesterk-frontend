@@ -1,5 +1,16 @@
 // frontend/js/public.js
 document.addEventListener('DOMContentLoaded', () => {
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'app-loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="app-loading-card">
+            <div class="app-loading-spinner" aria-hidden="true"></div>
+            <div class="app-loading-text">
+                <span>Please wait a moment</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
 
     // --- 1. ELEMENT SELECTORS ---
     const productGrid = document.getElementById('public-product-grid');
@@ -26,7 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. STATE & API CONFIG ---
     let productCache = [];
     let currentFilter = 'All';
-    const API_URL = 'https://sokhaptaesterk-backend.onrender.com/api';
+    const API_URL = (location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+        ? 'http://127.0.0.1:10000/api'
+        : 'https://sokhaptaesterk-backend.onrender.com/api';
+
+    async function warmServer(timeoutMs = 12000) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(`${API_URL}`, {
+                method: 'GET',
+                cache: 'no-cache',
+                signal: controller.signal
+            });
+            if (!response.ok) {
+                throw new Error(`Warmup failed: ${response.status}`);
+            }
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
 
     // --- 3. CORE API FUNCTION ---
     async function fetchAndInitialize() {
@@ -126,5 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // NOTE: We no longer need the 'currencyChanged' event listener.
 
     // --- 6. INITIAL LOAD ---
-    fetchAndInitialize();
+    warmServer()
+        .catch((error) => console.warn('Server warmup failed or timed out.', error))
+        .finally(() => {
+            loadingOverlay.classList.add('hidden');
+            setTimeout(() => loadingOverlay.remove(), 250);
+            fetchAndInitialize();
+        });
 });

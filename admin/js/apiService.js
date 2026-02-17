@@ -1,5 +1,28 @@
 // At the top of the file, we can keep the base URL for your own backend.
-const API_BASE_URL = 'https://sokhaptaesterk-backend.onrender.com/api'; 
+const API_BASE_URL = (location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+    ? 'http://127.0.0.1:10000/api'
+    : 'https://sokhaptaesterk-backend.onrender.com/api';
+
+window.API_BASE_URL = API_BASE_URL;
+
+window.warmServer = async function warmServer(timeoutMs = 12000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(API_BASE_URL, {
+            method: 'GET',
+            cache: 'no-cache',
+            signal: controller.signal
+        });
+        if (!response.ok) {
+            throw new Error(`Warmup failed: ${response.status}`);
+        }
+        return true;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+};
 
 // --- Supabase Client Initialization ---
 

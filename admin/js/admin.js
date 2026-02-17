@@ -1,5 +1,28 @@
 // This function will run on every single admin page
 document.addEventListener('DOMContentLoaded', async () => {
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'app-loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="app-loading-card">
+            <div class="app-loading-spinner" aria-hidden="true"></div>
+            <div class="app-loading-text">
+                <span>សូមរងចាំបន្តិច</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+
+    try {
+        if (window.warmServer) {
+            await window.warmServer();
+        }
+    } catch (error) {
+        console.warn('Server warmup failed or timed out.', error);
+    } finally {
+        loadingOverlay.classList.add('hidden');
+        setTimeout(() => loadingOverlay.remove(), 250);
+    }
+
     // 1. Run initial synchronous setup first
     // These functions do not depend on any asynchronous data.
     checkAuth();

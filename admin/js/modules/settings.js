@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const languageSelect = document.getElementById('language-select');
     const exchangeRateForm = document.getElementById('exchange-rate-form');
     const exchangeRateInputsContainer = document.getElementById('exchange-rate-inputs');
+    let currencyCache = [];
 
     // --- INITIALIZATION ---
     function initializeSettings() {
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formGroup.className = 'form-group';
                 
                 let labelText = '';
-                let inputValue = currency.rate_from_base;
+                let inputValue = currency.rate_to_base;
                 let isDisabled = false;
 
                 if (currency.code === baseCurrencyCode) {
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         code: fullCurrencyData.code,
                         name: fullCurrencyData.name,     // <-- Include the name
                         symbol: fullCurrencyData.symbol, // <-- Include the symbol
-                        rate_from_base: parseFloat(input.value)
+                        rate_to_base: parseFloat(input.value)
                     });
                 }
             }

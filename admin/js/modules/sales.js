@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn').addEventListener('click', logout);
 
     // --- 3. DATA FETCHING & RENDERING ---
+    const formatUsd = (amount) => {
+        const safeAmount = Number.isFinite(amount) ? amount : 0;
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(safeAmount);
+    };
     
     // Fetches sales from the API and triggers the table render
     async function fetchAndRenderSales() {
@@ -45,10 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>#${sale.receipt_number || sale.id.substring(0, 8)}</td>
                 <td>${saleTime}</td>
                 <td>${sale.staff_name || 'N/A'}</td>
-                <td>${formatPrice(sale.total_amount, 'USD')}</td>
+                <td>${formatUsd(sale.total_amount)}</td>
                 <td>${sale.payment_method}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view-details-btn" data-id="${sale.id}">View Details</button>
+                    <button class="btn btn-danger btn-sm delete-sale-btn" data-id="${sale.id}">Delete</button>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -58,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 4. EVENT LISTENERS ---
 
     // Use event delegation to handle clicks on the "View Details" buttons
-    tableBody.addEventListener('click', (e) => {
+    tableBody.addEventListener('click', async (e) => {
         // Find the button that was clicked using .closest()
         const viewBtn = e.target.closest('.view-details-btn');
 
@@ -70,6 +75,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (saleId) {
                 // ...open the receipt page in a new tab, passing the ID as a URL parameter.
                 window.open(`receipt.html?saleId=${saleId}`, '_blank');
+            }
+            return;
+        }
+
+        const deleteBtn = e.target.closest('.delete-sale-btn');
+        if (deleteBtn) {
+            const saleId = deleteBtn.dataset.id;
+            if (!saleId) return;
+
+            const confirmed = window.confirm(
+                'Delete this sale? This will revert inventory and remove the transaction.'
+            );
+            if (!confirmed) return;
+
+            deleteBtn.disabled = true;
+            try {
+                await apiFetch(`/transactions/sales/${saleId}`, { method: 'DELETE' });
+                await fetchAndRenderSales();
+            } catch (error) {
+                alert(`Failed to delete sale: ${error.message}`);
+            } finally {
+                deleteBtn.disabled = false;
             }
         }
     });

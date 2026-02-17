@@ -55,9 +55,9 @@ function setCurrency(currencyCode) {
 }
 
 /**
- * Formats a price from the base currency (KHR) into the target currency.
+ * Formats a price from the base currency (AppConfig.BASE_CURRENCY) into the target currency.
  * This is a synchronous function that assumes the currency data has already been loaded.
- * @param {number} basePrice The price in KHR.
+ * @param {number} basePrice The price in the base currency.
  * @param {string} targetCurrencyCode The currency code to format into (e.g., 'USD').
  * @returns {string} The formatted price string (e.g., "$92.50", "៛3,200").
  */
@@ -70,8 +70,8 @@ function formatPrice(basePrice, targetCurrencyCode) {
     }
 
     // 2. Perform the conversion using the correct rate from the database.
-    // To go FROM the base currency (KHR) TO another currency, we DIVIDE.
-    const convertedPrice = basePrice / currencyInfo.rate_to_base;
+    // rate_to_base is stored as "1 base = rate_to_base target".
+    const convertedPrice = basePrice * currencyInfo.rate_to_base;
     const symbol = currencyInfo.symbol;
 
     // 3. Apply special formatting rules based on the currency code.

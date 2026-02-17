@@ -49,6 +49,58 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(244, 246, 249, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.app-loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-loading-card {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #d8dee9;
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+.app-loading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.app-loading-text strong {
+  font-size: 1rem;
+}
+
+.app-loading-text span {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
 .mobile-menu-toggle {
   display: none;
 }
@@ -369,6 +421,7 @@ button, input, select, textarea {
 .search-bar-wrapper input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(92, 152, 217, 0.2); }
 
 @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .language-switcher {
   display: flex;
@@ -473,4 +526,3 @@ button, input, select, textarea {
     max-width: 200px;
     margin-top: 0.75rem;
 }
-

@@ -70,7 +70,7 @@ function populateReceipt(sale) {
     if (itemsBody) {
         itemsBody.innerHTML = '';
         let itemHtml = '';
-        const totalRowsOnPage = 20;
+        const totalRowsOnPage = 16;
         const itemsToRender = sale.sale_items || [];
         
         itemsToRender.forEach((item, index) => {
